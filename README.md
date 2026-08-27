@@ -22,7 +22,7 @@ Stack: React 18 and Vite. No chart library and no UI framework.
    npm run dev
    ```
 
-3. To get the current sheet data, run the sync script:
+3. To make the fallback snapshots current, run the sync script:
 
    ```
    npm run sync
@@ -36,20 +36,28 @@ Stack: React 18 and Vite. No chart library and no UI framework.
 
 ## How the data arrives
 
-The dashboard reads two snapshot files, `src/data/minutes-2026.json` and
-`src/data/song-index.json`. It does not call Google at page load. The browser
-cannot read the sheet directly, because the Google export URL sends no CORS
-header.
+The dashboard reads the sheet live. The browser downloads both sheets as CSV at
+page load. The Google export URL answers with the header
+`access-control-allow-origin: *`, so the browser accepts the answer. The sheets
+must stay readable by "Anyone with the link".
 
-The first snapshot holds the minutes. The second snapshot comes from the "Song
-Frequency 2026" sheet. That sheet lists all 590 songs in the book, so it gives
-the songs that nobody called.
+The first sheet holds the minutes. The second sheet is "Song Frequency 2026".
+That sheet lists all 590 songs in the book, so it gives the songs that nobody
+called.
 
-`scripts/sync-minutes.mjs` downloads both sheets as CSV and writes the
-snapshots. The spreadsheet ID and the two sheet GIDs are constants at the top of
-that script. The sheets must be readable by "Anyone with the link". Each
-snapshot holds the raw rows and the time of the download. The dashboard shows
-this time in the footer.
+Two snapshot files, `src/data/minutes-2026.json` and `src/data/song-index.json`,
+are the fallback. The dashboard shows the snapshot at the first paint, so the
+page needs no network to appear. The live rows replace the snapshot rows when
+both downloads are complete. If a download fails, the snapshot stays on screen
+and the footer gives the reason.
+
+The footer tells the reader which source the numbers come from. A button in the
+footer reads the sheet again.
+
+`src/lib/sheets.js` holds the spreadsheet ID, the two sheet GIDs, and the
+download function. The browser and the sync script both use it.
+`scripts/sync-minutes.mjs` writes the snapshot files. Run `npm run sync` to make
+the fallback current.
 
 ## How the rows are cleaned
 
@@ -82,10 +90,12 @@ it corrected.
 |---|---|
 | `src/App.jsx` | The dashboard: totals, search box, leaderboard, song detail |
 | `src/lib/minutes.js` | Row cleaning, song counts, search match |
-| `src/lib/csv.js` | CSV parser, used by the sync script |
-| `src/data/minutes-2026.json` | The snapshot of the minutes |
-| `src/data/song-index.json` | The snapshot of all songs in the book |
-| `scripts/sync-minutes.mjs` | The download script for both sheets |
+| `src/lib/csv.js` | The CSV parser |
+| `src/lib/sheets.js` | The sheet IDs and the CSV download |
+| `src/lib/useLiveSnapshots.js` | The live read, with the snapshot as fallback |
+| `src/data/minutes-2026.json` | The fallback snapshot of the minutes |
+| `src/data/song-index.json` | The fallback snapshot of all songs in the book |
+| `scripts/sync-minutes.mjs` | The script that writes both snapshots |
 
 ## Colors
 

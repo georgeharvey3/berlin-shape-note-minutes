@@ -353,6 +353,23 @@ h1 {
 
 .footnotes a { color: var(--series-1); }
 
+.link-button {
+  padding: 0;
+  font: inherit;
+  color: var(--series-1);
+  background: none;
+  border: 0;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.link-button:disabled {
+  color: var(--text-muted);
+  cursor: default;
+}
+
+.warning { color: var(--text-muted); }
+
 code {
   padding: 1px 4px;
   background: var(--surface-1);

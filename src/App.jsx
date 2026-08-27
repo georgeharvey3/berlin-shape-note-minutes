@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
-import snapshot from './data/minutes-2026.json'
-import songIndexSnapshot from './data/song-index.json'
+import fallbackMinutes from './data/minutes-2026.json'
+import fallbackSongIndex from './data/song-index.json'
+import { useLiveSnapshots } from './lib/useLiveSnapshots.js'
 import {
   cleanRows,
   buildLeaderboard,
@@ -29,6 +30,17 @@ export default function App() {
   // drops the choice and the dashboard picks the view again.
   const [pickedView, setPickedView] = useState(null)
 
+  // The rows come from the sheet itself. The bundled snapshots hold the first
+  // paint and stay on screen if the download fails.
+  const {
+    minutes: snapshot,
+    songIndex: songIndexSnapshot,
+    source,
+    status,
+    error,
+    refresh,
+  } = useLiveSnapshots({ minutes: fallbackMinutes, songIndex: fallbackSongIndex })
+
   const { calls, leaderboard, summary, repairedDates, droppedRows } = useMemo(() => {
     const cleaned = cleanRows(snapshot.rows)
     const bookSongs = readSongIndex(songIndexSnapshot.rows)
@@ -40,7 +52,7 @@ export default function App() {
       repairedDates: cleaned.repairedDates,
       droppedRows: cleaned.droppedRows,
     }
-  }, [])
+  }, [snapshot, songIndexSnapshot])
 
   // The songs of the chosen set. "Called" runs by the number of calls. The
   // other two sets run in book order, from page 26 to page 575.
@@ -232,10 +244,20 @@ export default function App() {
 
       <footer className="footnotes">
         <p>
-          Snapshot taken {new Date(snapshot.fetchedAt).toLocaleString('en-GB')} · {snapshot.rowCount}{' '}
-          sheet rows · <a href={snapshot.source.url}>open the sheet</a> · refresh with{' '}
-          <code>npm run sync</code>.
+          {source === 'live'
+            ? `Read from the sheet ${new Date(snapshot.fetchedAt).toLocaleTimeString('en-GB')}`
+            : `Snapshot taken ${new Date(snapshot.fetchedAt).toLocaleString('en-GB')}`}{' '}
+          · {snapshot.rowCount} sheet rows · <a href={snapshot.source.url}>open the sheet</a> ·{' '}
+          <button type="button" className="link-button" onClick={refresh} disabled={status === 'loading'}>
+            {status === 'loading' ? 'Reading the sheet…' : 'Read the sheet again'}
+          </button>
         </p>
+        {error && (
+          <p className="warning" role="status">
+            The sheet did not answer, so the numbers come from the snapshot of{' '}
+            {new Date(snapshot.fetchedAt).toLocaleString('en-GB')}. {error}
+          </p>
+        )}
         <p className="muted">
           The book has {songIndexSnapshot.rowCount} songs, from the “
           {songIndexSnapshot.source.sheetName}” sheet. {droppedRows} empty or unresolved minute rows
