@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { MINUTES_SHEETS, BOOK_SHEETS, toObjects } from './lib/sheets.js'
 import { buildBook, readBookIndex, EDITIONS } from './lib/books.js'
 import { useLiveSnapshots } from './lib/useLiveSnapshots.js'
@@ -42,11 +42,19 @@ const SONG_SETS = [
   { id: 'all', label: 'All songs' },
 ]
 
+// Which songs the change of the book touched.
+const BOOK_SETS = [
+  { id: 'any', label: 'Any' },
+  { id: 'new', label: 'New in 2025' },
+  { id: 'out', label: 'Out in 2025' },
+]
+
 const EDITION_LABELS = Object.fromEntries(EDITIONS.map((edition) => [edition.id, edition.label]))
 
 export default function App() {
   const [query, setQuery] = useState('')
   const [songSet, setSongSet] = useState('called')
+  const [bookSet, setBookSet] = useState('any')
   const [showAll, setShowAll] = useState(false)
   const [openSong, setOpenSong] = useState(null)
   // null means every year. A list means the years the reader chose.
@@ -117,16 +125,35 @@ export default function App() {
   const summary = useMemo(() => summarise(yearCalls, leaderboard), [yearCalls, leaderboard])
   const mixedEditions = editions.size > 1
 
+  // A song that the 2025 revision added needs that edition on screen, and a
+  // song that went out needs the 1991 revision. The year filter can take an
+  // edition away, so the choice falls back to "Any".
+  const bookSetAvailable = { any: true, new: editions.has('2025'), out: editions.has('1991') }
+  const activeBookSet = bookSetAvailable[bookSet] ? bookSet : 'any'
+
+  const byBookSet = useCallback(
+    (songs) => {
+      if (activeBookSet === 'any') return songs
+      const wanted = activeBookSet === 'new' ? 'added' : 'removed'
+      return songs.filter((song) => song.status === wanted)
+    },
+    [activeBookSet],
+  )
+
   // The songs of the chosen set. "Called" runs by the number of calls. The
   // other two sets run in book order.
+  // The songs the year filter and the book filter leave. It is the scale of the
+  // bars, so a search does not change the length of a bar but a filter does.
+  const inBook = useMemo(() => byBookSet(leaderboard), [leaderboard, byBookSet])
+
   const inSet = useMemo(() => {
-    if (songSet === 'called') return leaderboard.filter((song) => song.count > 0)
+    if (songSet === 'called') return inBook.filter((song) => song.count > 0)
     const byBook = (a, b) => a.bookOrder - b.bookOrder
     if (songSet === 'uncalled') {
-      return leaderboard.filter((song) => song.count === 0).sort(byBook)
+      return inBook.filter((song) => song.count === 0).sort(byBook)
     }
-    return [...leaderboard].sort(byBook)
-  }, [leaderboard, songSet])
+    return [...inBook].sort(byBook)
+  }, [inBook, songSet])
 
   const songMatches = useMemo(
     () => inSet.filter((song) => matchesQuery(song, query)),
@@ -138,10 +165,12 @@ export default function App() {
   // The songs one leader called, counted for that leader only.
   const leaderSongs = useMemo(() => {
     if (leaderNames.length === 0) return []
-    return buildLeaderboard(callsByLeaders(yearCalls, leaderNames), bookSongs, editions).filter(
-      (song) => song.count > 0,
+    return byBookSet(
+      buildLeaderboard(callsByLeaders(yearCalls, leaderNames), bookSongs, editions).filter(
+        (song) => song.count > 0,
+      ),
     )
-  }, [yearCalls, leaderNames, bookSongs, editions])
+  }, [yearCalls, leaderNames, bookSongs, editions, byBookSet])
 
   const searching = query.trim() !== ''
   const hasSongs = songMatches.length > 0
@@ -153,11 +182,10 @@ export default function App() {
 
   const board = leaderView ? leaderSongs : songMatches
   // The top-25 cap belongs to the ranked list only.
-  const capped = !leaderView && songSet === 'called' && !searching && !showAll
+  const capped =
+    !leaderView && songSet === 'called' && !searching && !showAll && board.length > TOP_N
   const visible = capped ? board.slice(0, TOP_N) : board
-  // The bar scale is the whole set on screen, and not the rows that match the
-  // search, so a search does not change the length of a bar.
-  const scale = leaderView ? leaderSongs : leaderboard
+  const scale = leaderView ? leaderSongs : inBook
   const maxCount = Math.max(1, ...scale.map((song) => song.count))
   const lastDay = yearCalls.length > 0 ? yearCalls[yearCalls.length - 1].dateLabel : '—'
 
@@ -186,6 +214,12 @@ export default function App() {
 
   function chooseSet(next) {
     setSongSet(next)
+    setShowAll(false)
+    setOpenSong(null)
+  }
+
+  function chooseBookSet(next) {
+    setBookSet(next)
     setShowAll(false)
     setOpenSong(null)
   }
@@ -311,6 +345,20 @@ export default function App() {
               ))}
             </div>
           )}
+          <div className="views" role="group" aria-label="Which songs the change of the book touched">
+            {BOOK_SETS.map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                className={activeBookSet === option.id ? 'view on' : 'view'}
+                aria-pressed={activeBookSet === option.id}
+                disabled={!bookSetAvailable[option.id]}
+                onClick={() => chooseBookSet(option.id)}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
           <p className="result-count" role="status">
             {leaderView
               ? `${leaderLabel} called ${leaderCalls} songs · ${board.length} different songs`
@@ -442,7 +490,7 @@ function SongRow({ song, maxCount, showRank, showEdition, leaderView, leaderLabe
         <span className="rank">{showRank && !never ? song.rank : ''}</span>
         <span className="song-page">{song.page}</span>
         <span className="title">
-          {song.title}
+          <span className="title-text">{song.title}</span>
           {showEdition && song.movedFrom && <span className="tag">was {song.movedFrom}</span>}
           {showEdition && song.status === 'added' && <span className="tag">new in 2025</span>}
           {showEdition && song.status === 'removed' && <span className="tag">out in 2025</span>}

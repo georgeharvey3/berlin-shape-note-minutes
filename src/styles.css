@@ -214,7 +214,13 @@ h1 {
   cursor: pointer;
 }
 
-.view:hover { background: var(--hover); }
+.view:hover:not(:disabled) { background: var(--hover); }
+
+.view:disabled {
+  color: var(--text-muted);
+  cursor: default;
+  opacity: 0.55;
+}
 
 .view.on {
   color: var(--text-primary);
@@ -315,13 +321,22 @@ h1 {
 }
 
 .title {
+  display: flex;
+  align-items: baseline;
+  min-width: 0;
+}
+
+/* The title gets the ellipsis, so a tag beside it stays whole. */
+.title-text {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .tag {
+  flex: none;
   margin-left: 7px;
+  white-space: nowrap;
   padding: 1px 6px;
   font-size: 11px;
   font-weight: 500;

@@ -7,7 +7,7 @@ search box for a song, a page number, or a leader.
 The dashboard reads six years of minutes, from 2021 to 2026. A filter above the
 totals selects the years. Every year counts by default. A second filter selects
 the songs that leaders called, the songs that nobody called, or all songs in the
-book.
+book. A third filter selects the songs that the change of the book touched.
 
 Stack: React 18 and Vite. No chart library and no UI framework.
 
@@ -128,6 +128,16 @@ The set of songs behind the two lists follows the year filter. The years 2021 to
 2024 use the 1991 revision only, so the book has 554 songs. The year 2026 uses
 the 2025 revision only, so the book has 590 songs. A selection that crosses the
 change of the book gives all 663 songs.
+
+The third filter has three buttons: "Any", "New in 2025" and "Out in 2025". The
+button "New in 2025" gives the 109 songs that the 2025 revision added. The
+button "Out in 2025" gives the 73 songs that went out. A button turns off when
+the year filter takes its edition away. The years 2021 to 2024 use the 1991
+revision only, so "New in 2025" turns off in those years.
+
+The three filters work together. The bars follow the year filter and the book
+filter, so the longest bar of the set on screen is always full. A search does not
+change the length of a bar.
 
 The footer of the dashboard reports how many rows it skipped and how many dates
 it corrected.
