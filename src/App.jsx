@@ -42,11 +42,16 @@ const SONG_SETS = [
   { id: 'all', label: 'All songs' },
 ]
 
-// Which songs the change of the book touched.
+// Which songs of the book the list shows. `needs` names the edition that the
+// year filter must leave on screen, because a song that only that edition has
+// falls out of the song list with it.
 const BOOK_SETS = [
-  { id: 'any', label: 'Any' },
-  { id: 'new', label: 'New in 2025' },
-  { id: 'out', label: 'Out in 2025' },
+  { id: 'any', label: 'Any', match: () => true },
+  { id: 'in1991', label: '1991 book', match: (song) => Boolean(song.editions['1991']) },
+  { id: 'in2025', label: '2025 book', match: (song) => Boolean(song.editions['2025']) },
+  { id: 'both', label: 'Both books', match: (song) => song.status === 'both' },
+  { id: 'new', label: 'New in 2025', match: (song) => song.status === 'added', needs: '2025' },
+  { id: 'out', label: 'Out in 2025', match: (song) => song.status === 'removed', needs: '1991' },
 ]
 
 const EDITION_LABELS = Object.fromEntries(EDITIONS.map((edition) => [edition.id, edition.label]))
@@ -128,14 +133,16 @@ export default function App() {
   // A song that the 2025 revision added needs that edition on screen, and a
   // song that went out needs the 1991 revision. The year filter can take an
   // edition away, so the choice falls back to "Any".
-  const bookSetAvailable = { any: true, new: editions.has('2025'), out: editions.has('1991') }
+  const bookSetAvailable = Object.fromEntries(
+    BOOK_SETS.map((option) => [option.id, !option.needs || editions.has(option.needs)]),
+  )
   const activeBookSet = bookSetAvailable[bookSet] ? bookSet : 'any'
 
   const byBookSet = useCallback(
     (songs) => {
       if (activeBookSet === 'any') return songs
-      const wanted = activeBookSet === 'new' ? 'added' : 'removed'
-      return songs.filter((song) => song.status === wanted)
+      const { match } = BOOK_SETS.find((option) => option.id === activeBookSet)
+      return songs.filter(match)
     },
     [activeBookSet],
   )
@@ -345,7 +352,20 @@ export default function App() {
               ))}
             </div>
           )}
-          <div className="views" role="group" aria-label="Which songs the change of the book touched">
+          <p className="result-count" role="status">
+            {leaderView
+              ? `${leaderLabel} called ${leaderCalls} songs · ${board.length} different songs`
+              : searching
+                ? `${board.length} of ${inSet.length} songs match`
+                : capped
+                  ? `Top ${Math.min(TOP_N, inSet.length)} of ${inSet.length} songs`
+                  : `${inSet.length} songs`}
+          </p>
+        </div>
+
+        <div className="book-filter">
+          <span className="book-filter-label">In the book</span>
+          <div className="views" role="group" aria-label="Which songs of the book to show">
             {BOOK_SETS.map((option) => (
               <button
                 key={option.id}
@@ -359,15 +379,6 @@ export default function App() {
               </button>
             ))}
           </div>
-          <p className="result-count" role="status">
-            {leaderView
-              ? `${leaderLabel} called ${leaderCalls} songs · ${board.length} different songs`
-              : searching
-                ? `${board.length} of ${inSet.length} songs match`
-                : capped
-                  ? `Top ${Math.min(TOP_N, inSet.length)} of ${inSet.length} songs`
-                  : `${inSet.length} songs`}
-          </p>
         </div>
 
         {searching && hasLeaders && hasSongs && (
@@ -454,8 +465,9 @@ export default function App() {
           songs. {book.songs.filter((song) => song.status === 'added').length} songs are new,{' '}
           {book.songs.filter((song) => song.status === 'removed').length} songs went out, and{' '}
           {book.songs.filter((song) => song.status === 'both' && song.editions['1991'].page !== song.editions['2025'].page).length}{' '}
-          songs moved to a new page. The dashboard counts the calls of the two editions together, so
-          Africa on 178 and Africa on 178t are one song.
+          songs moved to a new page. The two editions give {book.songs.length} songs together. The
+          dashboard counts the calls of the two editions under one song, so Africa on 178 and Africa
+          on 178t are one song.
         </p>
         <p className="muted">
           {changeDay

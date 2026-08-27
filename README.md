@@ -7,7 +7,7 @@ search box for a song, a page number, or a leader.
 The dashboard reads six years of minutes, from 2021 to 2026. A filter above the
 totals selects the years. Every year counts by default. A second filter selects
 the songs that leaders called, the songs that nobody called, or all songs in the
-book. A third filter selects the songs that the change of the book touched.
+book. A third filter selects the songs of one edition of the book.
 
 Stack: React 18 and Vite. No chart library and no UI framework.
 
@@ -129,15 +129,32 @@ The set of songs behind the two lists follows the year filter. The years 2021 to
 the 2025 revision only, so the book has 590 songs. A selection that crosses the
 change of the book gives all 663 songs.
 
-The third filter has three buttons: "Any", "New in 2025" and "Out in 2025". The
-button "New in 2025" gives the 109 songs that the 2025 revision added. The
-button "Out in 2025" gives the 73 songs that went out. A button turns off when
-the year filter takes its edition away. The years 2021 to 2024 use the 1991
-revision only, so "New in 2025" turns off in those years.
+The third filter is the row "In the book". It has six buttons:
+
+| Button | The songs it gives | Count |
+|---|---|---|
+| `Any` | no restriction | 663 |
+| `1991 book` | the songs of the 1991 revision | 554 |
+| `2025 book` | the songs of the 2025 revision | 590 |
+| `Both books` | the songs of both editions | 481 |
+| `New in 2025` | the songs that the 2025 revision added | 109 |
+| `Out in 2025` | the songs that went out | 73 |
+
+The counts above are the counts for all six years. The year filter cuts them. The
+year 2026 with the button `1991 book` gives the 481 songs that survived the
+change of the book.
+
+A button turns off when the year filter takes away the only edition that has its
+songs. The years 2021 to 2024 use the 1991 revision only, so `New in 2025` turns
+off in those years. The choice then falls back to `Any`. It comes back when the
+reader selects a year with that edition again.
 
 The three filters work together. The bars follow the year filter and the book
 filter, so the longest bar of the set on screen is always full. A search does not
 change the length of a bar.
+
+The list "All songs" with the button `Any` gives 668 songs: the 663 songs of the
+two editions, and the five songs that neither edition has.
 
 The footer of the dashboard reports how many rows it skipped and how many dates
 it corrected.

@@ -271,6 +271,26 @@ h1 {
   margin: 14px 0 4px;
 }
 
+/* ---------- book filter ---------- */
+
+.book-filter {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 14px 0 2px;
+}
+
+.book-filter-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.book-filter .views { flex-wrap: wrap; }
+
 .rows {
   list-style: none;
   margin: 0;
