@@ -42,16 +42,15 @@ export default function App() {
     }
   }, [])
 
-  // The songs of the chosen set. "Never called" runs in book order, because
-  // every count is 0 and a count sort says nothing.
+  // The songs of the chosen set. "Called" runs by the number of calls. The
+  // other two sets run in book order, from page 26 to page 575.
   const inSet = useMemo(() => {
     if (songSet === 'called') return leaderboard.filter((song) => song.count > 0)
+    const byBook = (a, b) => (a.bookOrder ?? 0) - (b.bookOrder ?? 0)
     if (songSet === 'uncalled') {
-      return leaderboard
-        .filter((song) => song.count === 0)
-        .sort((a, b) => (a.bookOrder ?? 0) - (b.bookOrder ?? 0))
+      return leaderboard.filter((song) => song.count === 0).sort(byBook)
     }
-    return leaderboard
+    return [...leaderboard].sort(byBook)
   }, [leaderboard, songSet])
 
   const songMatches = useMemo(
@@ -209,6 +208,7 @@ export default function App() {
                 key={song.key}
                 song={song}
                 maxCount={maxCount}
+                showRank={leaderView || songSet === 'called'}
                 leaderView={leaderView}
                 leaderLabel={leaderLabel}
                 open={openSong === song.key}
@@ -247,7 +247,7 @@ export default function App() {
   )
 }
 
-function SongRow({ song, maxCount, leaderView, leaderLabel, open, onToggle }) {
+function SongRow({ song, maxCount, showRank, leaderView, leaderLabel, open, onToggle }) {
   const never = song.count === 0
   const width = `${Math.max((song.count / maxCount) * 100, 2)}%`
   const firstCall = never ? null : song.calls[0]
@@ -262,7 +262,7 @@ function SongRow({ song, maxCount, leaderView, leaderLabel, open, onToggle }) {
         aria-expanded={never ? undefined : open}
         disabled={never}
       >
-        <span className="rank">{never ? '' : song.rank}</span>
+        <span className="rank">{showRank && !never ? song.rank : ''}</span>
         <span className="song-page">{song.page}</span>
         <span className="title">{song.title}</span>
         <span className="track">{never ? null : <span className="bar" style={{ width }} />}</span>

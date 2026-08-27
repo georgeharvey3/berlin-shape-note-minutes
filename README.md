@@ -69,8 +69,9 @@ The dashboard counts the calls itself. It takes the page and the title from the
 song list, and not the `Frequency` column of that sheet. The two counts agree:
 636 calls, 315 songs with a call, and 275 songs with no call.
 
-A song with no call gets no rank and no bar. The list of these songs runs in
-book order.
+A song with no call gets no bar. The "Called" list runs by the number of calls,
+and it shows the rank of each song. The "Never called" list and the "All songs"
+list run in book order, from page 26 to page 575. These two lists show no rank.
 
 The footer of the dashboard reports how many rows it skipped and how many dates
 it corrected.
