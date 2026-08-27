@@ -47,11 +47,3 @@ export function parseCsv(text) {
   return rows
 }
 
-export function parseCsvToObjects(text) {
-  const rows = parseCsv(text).filter((row) => row.some((cell) => cell.trim() !== ''))
-  if (rows.length === 0) return []
-  const header = rows[0].map((cell) => cell.trim())
-  return rows.slice(1).map((cells) =>
-    Object.fromEntries(header.map((key, index) => [key, (cells[index] ?? '').trim()])),
-  )
-}
