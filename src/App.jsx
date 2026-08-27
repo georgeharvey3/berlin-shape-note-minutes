@@ -42,14 +42,14 @@ const SONG_SETS = [
   { id: 'all', label: 'All songs' },
 ]
 
-// Which songs of the book the list shows. `needs` names the edition that the
-// year filter must leave on screen, because a song that only that edition has
-// falls out of the song list with it.
-const BOOK_SETS = [
+// Which edition the song is in. `needs` names the edition that the year filter
+// must leave on screen, because a song that only that edition has falls out of
+// the song list with it.
+const EDITION_SETS = [
   { id: 'any', label: 'Any', match: () => true },
-  { id: 'in1991', label: '1991 book', match: (song) => Boolean(song.editions['1991']) },
-  { id: 'in2025', label: '2025 book', match: (song) => Boolean(song.editions['2025']) },
-  { id: 'both', label: 'Both books', match: (song) => song.status === 'both' },
+  { id: 'in1991', label: '1991 edition', match: (song) => Boolean(song.editions['1991']) },
+  { id: 'in2025', label: '2025 edition', match: (song) => Boolean(song.editions['2025']) },
+  { id: 'both', label: 'Both editions', match: (song) => song.status === 'both' },
   { id: 'new', label: 'New in 2025', match: (song) => song.status === 'added', needs: '2025' },
   { id: 'out', label: 'Out in 2025', match: (song) => song.status === 'removed', needs: '1991' },
 ]
@@ -59,7 +59,7 @@ const EDITION_LABELS = Object.fromEntries(EDITIONS.map((edition) => [edition.id,
 export default function App() {
   const [query, setQuery] = useState('')
   const [songSet, setSongSet] = useState('called')
-  const [bookSet, setBookSet] = useState('any')
+  const [editionSet, setEditionSet] = useState('any')
   const [showAll, setShowAll] = useState(false)
   const [openSong, setOpenSong] = useState(null)
   // null means every year. A list means the years the reader chose.
@@ -73,7 +73,7 @@ export default function App() {
   const { snapshots, source, status, failures, fetchedAt, refresh } = useLiveSnapshots(FALLBACKS)
 
   // The book, from the two "Song Frequency" sheets. It links a song of the
-  // 1991 revision to the same song of the 2025 revision.
+  // 1991 edition to the same song of the 2025 edition.
   const book = useMemo(
     () =>
       buildBook({
@@ -104,7 +104,7 @@ export default function App() {
     return counts
   }, [calls])
 
-  // The first day on which the singers used the 2025 revision.
+  // The first day on which the singers used the 2025 edition.
   const changeDay = useMemo(() => {
     const days = [...editionDays.entries()].sort((a, b) => a[0].localeCompare(b[0]))
     const found = days.find(([, edition]) => edition === '2025')
@@ -130,28 +130,28 @@ export default function App() {
   const summary = useMemo(() => summarise(yearCalls, leaderboard), [yearCalls, leaderboard])
   const mixedEditions = editions.size > 1
 
-  // A song that the 2025 revision added needs that edition on screen, and a
-  // song that went out needs the 1991 revision. The year filter can take an
-  // edition away, so the choice falls back to "Any".
-  const bookSetAvailable = Object.fromEntries(
-    BOOK_SETS.map((option) => [option.id, !option.needs || editions.has(option.needs)]),
+  // A song that the 2025 edition added needs that edition on screen, and a song
+  // that went out needs the 1991 edition. The year filter can take an edition
+  // away, so the choice falls back to "Any".
+  const editionSetAvailable = Object.fromEntries(
+    EDITION_SETS.map((option) => [option.id, !option.needs || editions.has(option.needs)]),
   )
-  const activeBookSet = bookSetAvailable[bookSet] ? bookSet : 'any'
+  const activeEditionSet = editionSetAvailable[editionSet] ? editionSet : 'any'
 
-  const byBookSet = useCallback(
+  const byEditionSet = useCallback(
     (songs) => {
-      if (activeBookSet === 'any') return songs
-      const { match } = BOOK_SETS.find((option) => option.id === activeBookSet)
+      if (activeEditionSet === 'any') return songs
+      const { match } = EDITION_SETS.find((option) => option.id === activeEditionSet)
       return songs.filter(match)
     },
-    [activeBookSet],
+    [activeEditionSet],
   )
 
   // The songs of the chosen set. "Called" runs by the number of calls. The
   // other two sets run in book order.
-  // The songs the year filter and the book filter leave. It is the scale of the
-  // bars, so a search does not change the length of a bar but a filter does.
-  const inBook = useMemo(() => byBookSet(leaderboard), [leaderboard, byBookSet])
+  // The songs the year filter and the edition filter leave. It is the scale of
+  // the bars, so a search does not change the length of a bar but a filter does.
+  const inBook = useMemo(() => byEditionSet(leaderboard), [leaderboard, byEditionSet])
 
   const inSet = useMemo(() => {
     if (songSet === 'called') return inBook.filter((song) => song.count > 0)
@@ -172,12 +172,12 @@ export default function App() {
   // The songs one leader called, counted for that leader only.
   const leaderSongs = useMemo(() => {
     if (leaderNames.length === 0) return []
-    return byBookSet(
+    return byEditionSet(
       buildLeaderboard(callsByLeaders(yearCalls, leaderNames), bookSongs, editions).filter(
         (song) => song.count > 0,
       ),
     )
-  }, [yearCalls, leaderNames, bookSongs, editions, byBookSet])
+  }, [yearCalls, leaderNames, bookSongs, editions, byEditionSet])
 
   const searching = query.trim() !== ''
   const hasSongs = songMatches.length > 0
@@ -225,8 +225,8 @@ export default function App() {
     setOpenSong(null)
   }
 
-  function chooseBookSet(next) {
-    setBookSet(next)
+  function chooseEditionSet(next) {
+    setEditionSet(next)
     setShowAll(false)
     setOpenSong(null)
   }
@@ -261,7 +261,7 @@ export default function App() {
         <h1>Which song gets called the most?</h1>
         <p className="lede">
           Every song called at the Berlin singings, from the shared minutes. The singers changed
-          the book in September 2025, and a song keeps one row across the two editions. Latest
+          the edition in September 2025, and a song keeps one row across the two editions. Latest
           singing in the data: {lastDay}.
         </p>
       </header>
@@ -297,7 +297,7 @@ export default function App() {
             ? 'Every year counts. Click a year to count that year alone.'
             : `Counting ${yearLabel}. Click another year to add it, or “All years” to count every year.`}{' '}
           {mixedEditions
-            ? 'These years cross the change of the book, so a page can carry two numbers.'
+            ? 'These years cross the change of the edition, so a page can carry two numbers.'
             : `The singers used the ${EDITION_LABELS[[...editions][0]] ?? 'book'} in these years.`}
         </p>
       </section>
@@ -363,17 +363,17 @@ export default function App() {
           </p>
         </div>
 
-        <div className="book-filter">
-          <span className="book-filter-label">In the book</span>
-          <div className="views" role="group" aria-label="Which songs of the book to show">
-            {BOOK_SETS.map((option) => (
+        <div className="edition-filter">
+          <span className="edition-filter-label">Edition</span>
+          <div className="views" role="group" aria-label="Which edition the song is in">
+            {EDITION_SETS.map((option) => (
               <button
                 key={option.id}
                 type="button"
-                className={activeBookSet === option.id ? 'view on' : 'view'}
-                aria-pressed={activeBookSet === option.id}
-                disabled={!bookSetAvailable[option.id]}
-                onClick={() => chooseBookSet(option.id)}
+                className={activeEditionSet === option.id ? 'view on' : 'view'}
+                aria-pressed={activeEditionSet === option.id}
+                disabled={!editionSetAvailable[option.id]}
+                onClick={() => chooseEditionSet(option.id)}
               >
                 {option.label}
               </button>
@@ -460,8 +460,8 @@ export default function App() {
           </p>
         )}
         <p className="muted">
-          The 1991 revision of the book has {book.songs.filter((song) => song.editions['1991']).length}{' '}
-          songs. The 2025 revision has {book.songs.filter((song) => song.editions['2025']).length}{' '}
+          The 1991 edition has {book.songs.filter((song) => song.editions['1991']).length} songs.
+          The 2025 edition has {book.songs.filter((song) => song.editions['2025']).length}{' '}
           songs. {book.songs.filter((song) => song.status === 'added').length} songs are new,{' '}
           {book.songs.filter((song) => song.status === 'removed').length} songs went out, and{' '}
           {book.songs.filter((song) => song.status === 'both' && song.editions['1991'].page !== song.editions['2025'].page).length}{' '}
@@ -471,7 +471,7 @@ export default function App() {
         </p>
         <p className="muted">
           {changeDay
-            ? `The first singing with the 2025 revision is ${changeDay.split('-').reverse().join('.')}. The page and the title of each call name the edition, so the dashboard needs no cut-off date.`
+            ? `The first singing with the 2025 edition is ${changeDay.split('-').reverse().join('.')}. The page and the title of each call name the edition, so the dashboard needs no cut-off date.`
             : 'Every singing in the data uses one edition of the book.'}{' '}
           {droppedRows} empty or unresolved minute rows skipped. {repairedDates} rows had a
           fill-down year in the Date column; their day and month match a real singing, so the year
@@ -506,7 +506,7 @@ function SongRow({ song, maxCount, showRank, showEdition, leaderView, leaderLabe
           {showEdition && song.movedFrom && <span className="tag">was {song.movedFrom}</span>}
           {showEdition && song.status === 'added' && <span className="tag">new in 2025</span>}
           {showEdition && song.status === 'removed' && <span className="tag">out in 2025</span>}
-          {song.status === 'off-book' && <span className="tag">not in the book</span>}
+          {song.status === 'off-book' && <span className="tag">not in either edition</span>}
         </span>
         <span className="track">{never ? null : <span className="bar" style={{ width }} />}</span>
         <span className={never ? 'count zero' : 'count'}>{song.count}</span>
@@ -521,17 +521,17 @@ function SongRow({ song, maxCount, showRank, showEdition, leaderView, leaderLabe
           </p>
           {oldPage && newPage && oldPage !== newPage && (
             <p className="detail-summary muted">
-              Page {oldPage} in the 1991 book and page {newPage} in the 2025 book.
+              Page {oldPage} in the 1991 edition and page {newPage} in the 2025 edition.
             </p>
           )}
           {oldPage && !newPage && (
             <p className="detail-summary muted">
-              Page {oldPage} in the 1991 book. The 2025 book does not have this song.
+              Page {oldPage} in the 1991 edition. The 2025 edition does not have this song.
             </p>
           )}
           {!oldPage && newPage && (
             <p className="detail-summary muted">
-              Page {newPage} in the 2025 book. The 1991 book did not have this song.
+              Page {newPage} in the 2025 edition. The 1991 edition did not have this song.
             </p>
           )}
           <table>

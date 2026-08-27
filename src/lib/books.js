@@ -1,9 +1,9 @@
 // The two editions of the book, and the link between them.
 //
-// The singers changed the book in September 2025. The 1991 revision has 557
-// songs on pages 24 to 573. The 2025 revision has 590 songs on pages 26 to
-// 575. The 2025 revision adds songs, removes songs, and moves a few songs to a
-// new page: "Africa" moves from 178 to 178t.
+// The singers changed the edition in September 2025. The 1991 edition has 554
+// songs on pages 26 to 573. The 2025 edition has 590 songs on pages 26 to 575.
+// The 2025 edition adds songs, removes songs, and moves a few songs to a new
+// page: "Africa" moves from 178 to 178t.
 //
 // A song must stay one song across the two editions, so this module builds a
 // crosswalk. Each song gets one `id`, and it keeps the page and the title of
@@ -11,8 +11,8 @@
 // editions together under that one id.
 
 export const EDITIONS = [
-  { id: '1991', label: '1991 revision', shortLabel: '1991 book' },
-  { id: '2025', label: '2025 revision', shortLabel: '2025 book' },
+  { id: '1991', label: '1991 edition', shortLabel: '1991 edition' },
+  { id: '2025', label: '2025 edition', shortLabel: '2025 edition' },
 ]
 
 // The current edition. Its page and title are the ones the dashboard shows.
@@ -156,8 +156,8 @@ function crosswalk(oldIndex, newIndex) {
 }
 
 // Rows of a "Song Frequency" sheet that no edition of the book has. The music
-// of the 1991 revision starts on page 26, so pages 24t, 24b and 25 hold no
-// song. The 1991 revision has 554 songs, and these three rows make it 557.
+// of the 1991 edition starts on page 26, so pages 24t, 24b and 25 hold no song.
+// The 1991 edition has 554 songs, and these three rows make it 557.
 const EXCLUDED_PAGES = {
   1991: ['24t', '24b', '25'],
   2025: [],
@@ -176,8 +176,8 @@ function songId(edition, song) {
  * Build the song list of the book from the two edition sheets.
  *
  * Every song gets one entry with the page and the title of each edition it
- * belongs to. A song that only the 1991 revision has keeps the status
- * "removed". A song that only the 2025 revision has keeps the status "added".
+ * belongs to. A song that only the 1991 edition has keeps the status
+ * "removed". A song that only the 2025 edition has keeps the status "added".
  */
 export function buildBook(indexes) {
   const oldIndex = dropExcluded('1991', indexes['1991'] ?? [])

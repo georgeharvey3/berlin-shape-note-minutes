@@ -18,7 +18,8 @@ export const MINUTES_SHEETS = [
   { key: 'minutes2026', gid: '1924038192', sheetName: 'Minutes 2026', file: 'minutes-2026.json', year: 2026 },
 ]
 
-// The two editions of the book. The singers changed the book in September 2025.
+// The two editions of the book. The singers changed the edition in September
+// 2025.
 // Each sheet lists every song of one edition, so it gives the songs that
 // nobody called. The dashboard counts the calls itself, so it reads the page
 // and the title only, and not the "Frequency" column.

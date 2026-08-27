@@ -154,8 +154,8 @@ export function cleanAllRows(sheets) {
  *
  * The evidence is the page and the title of each call. A page and title that
  * only one edition has names that edition. A day with no such call takes the
- * edition of the day before it, because the change of the book runs one way:
- * once the singers use the 2025 revision, they never go back.
+ * edition of the day before it, because the change of the edition runs one way:
+ * once the singers use the 2025 edition, they never go back.
  */
 export function assignEditions(calls, book) {
   const evidence = new Map()
@@ -180,7 +180,7 @@ export function assignEditions(calls, book) {
       if (counts['2025'] > counts['1991']) edition = '2025'
       else if (counts['1991'] > counts['2025']) edition = '1991'
     }
-    // The change runs one way, so a later day never returns to the 1991 book.
+    // The change runs one way, so a later day never returns to the 1991 edition.
     if (latest === '2025') edition = '2025'
     editions.set(day, edition)
     if (edition) latest = edition
@@ -224,7 +224,7 @@ export function editionsOf(calls) {
  * `songs` holds the songs of the book that the chosen years are about. A song
  * with no call gets a count of 0, so the dashboard can show the songs that
  * nobody called. `editions` says which page and title to show: the 2025
- * revision wins when the chosen years use it.
+ * edition wins when the chosen years use it.
  */
 export function buildLeaderboard(calls, songs = [], editions = new Set([CURRENT_EDITION])) {
   const showNew = editions.has('2025')

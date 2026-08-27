@@ -64,12 +64,12 @@ The bundle holds eight snapshots, so this shape keeps the bundle small.
 
 ## The two editions of the book
 
-The singers changed the book in September 2025. The first singing with the new
-book is 25.09.2025. The 1991 revision has 554 songs on pages 26 to 573. The 2025
-revision has 590 songs on pages 26 to 575.
+The singers changed the edition in September 2025. The first singing with the new
+book is 25.09.2025. The 1991 edition has 554 songs on pages 26 to 573. The 2025
+edition has 590 songs on pages 26 to 575.
 
 The "Song Frequency 1991" sheet holds three rows that no edition has: pages 24t,
-24b and 25. The music of the 1991 revision starts on page 26. `EXCLUDED_PAGES`
+24b and 25. The music of the 1991 edition starts on page 26. `EXCLUDED_PAGES`
 in `src/lib/books.js` drops these three rows.
 
 The change moves some songs to a new page. "Africa" moves from page 178 to page
@@ -91,13 +91,13 @@ that went out. 19 of the matched songs have a new page number.
 
 The dashboard counts the calls of the two editions under one song. "Africa" has
 one row with 16 calls, from 2021 to 2026. The row shows the page of the 2025
-revision and a tag with the old page. The detail of the song names both pages.
+edition and a tag with the old page. The detail of the song names both pages.
 
 Each singing day carries its own edition, so the dashboard needs no cut-off
 date. `assignEditions` reads the page and the title of each call. A page and
 title that only one edition has names that edition. A day with no such call
-takes the edition of the day before it, because the change of the book runs one
-way.
+takes the edition of the day before it, because the change of the edition runs
+one way.
 
 ## How the rows are cleaned
 
@@ -118,38 +118,38 @@ corrections to the source data:
 
 Five calls name a song that neither edition has. Four of them are carols, and
 one is a transcription. These calls keep a row of their own with the tag "not in
-the book".
+either edition".
 
 A song with no call gets no bar. The "Called" list runs by the number of calls,
 and it shows the rank of each song. The "Never called" list and the "All songs"
 list run in book order. These two lists show no rank.
 
 The set of songs behind the two lists follows the year filter. The years 2021 to
-2024 use the 1991 revision only, so the book has 554 songs. The year 2026 uses
-the 2025 revision only, so the book has 590 songs. A selection that crosses the
-change of the book gives all 663 songs.
+2024 use the 1991 edition only, so the book has 554 songs. The year 2026 uses
+the 2025 edition only, so the book has 590 songs. A selection that crosses the
+change of the edition gives all 663 songs.
 
-The third filter is the row "In the book". It has six buttons:
+The third filter is the row "Edition". It has six buttons:
 
 | Button | The songs it gives | Count |
 |---|---|---|
 | `Any` | no restriction | 663 |
-| `1991 book` | the songs of the 1991 revision | 554 |
-| `2025 book` | the songs of the 2025 revision | 590 |
-| `Both books` | the songs of both editions | 481 |
-| `New in 2025` | the songs that the 2025 revision added | 109 |
+| `1991 edition` | the songs of the 1991 edition | 554 |
+| `2025 edition` | the songs of the 2025 edition | 590 |
+| `Both editions` | the songs of both editions | 481 |
+| `New in 2025` | the songs that the 2025 edition added | 109 |
 | `Out in 2025` | the songs that went out | 73 |
 
 The counts above are the counts for all six years. The year filter cuts them. The
-year 2026 with the button `1991 book` gives the 481 songs that survived the
-change of the book.
+year 2026 with the button `1991 edition` gives the 481 songs that survived the
+change of the edition.
 
 A button turns off when the year filter takes away the only edition that has its
-songs. The years 2021 to 2024 use the 1991 revision only, so `New in 2025` turns
+songs. The years 2021 to 2024 use the 1991 edition only, so `New in 2025` turns
 off in those years. The choice then falls back to `Any`. It comes back when the
 reader selects a year with that edition again.
 
-The three filters work together. The bars follow the year filter and the book
+The three filters work together. The bars follow the year filter and the edition
 filter, so the longest bar of the set on screen is always full. A search does not
 change the length of a bar.
 
@@ -170,8 +170,8 @@ it corrected.
 | `src/lib/sheets.js` | The sheet IDs, the CSV download, and the row reader |
 | `src/lib/useLiveSnapshots.js` | The live read, with the snapshots as fallback |
 | `src/data/minutes-20NN.json` | The fallback snapshot of one year of minutes |
-| `src/data/book-1991.json` | The fallback snapshot of the 1991 revision |
-| `src/data/book-2025.json` | The fallback snapshot of the 2025 revision |
+| `src/data/book-1991.json` | The fallback snapshot of the 1991 edition |
+| `src/data/book-2025.json` | The fallback snapshot of the 2025 edition |
 | `scripts/sync-minutes.mjs` | The script that writes all snapshots |
 
 ## Colors
