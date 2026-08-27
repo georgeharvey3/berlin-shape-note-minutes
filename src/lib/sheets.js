@@ -1,62 +1,121 @@
-// The Google Sheet behind the dashboard, and the download of one sheet as CSV.
+// The two books the Berlin singers sing from, the Google Sheet behind each
+// book, and the download of one sheet as CSV.
 //
 // The CSV export URL answers with "access-control-allow-origin: *", so the
-// browser can read it. The sheet must stay readable by "Anyone with the link".
+// browser can read it. A sheet must stay readable by "Anyone with the link".
 // The sync script uses the same code to write the snapshot files.
 import { parseCsv } from './csv.js'
 
-export const SPREADSHEET_ID = '1lM9ijnQKsV0GdaZcOe3bbDtIWXlk4RoFEfDc7Xn48Sc'
-
-// One sheet of minutes per year. The sheet holds the year in its name, and the
-// rows carry the date, so `year` here is only the label and the fallback.
-export const MINUTES_SHEETS = [
-  { key: 'minutes2021', gid: '258489324', sheetName: 'Minutes 2021', file: 'minutes-2021.json', year: 2021 },
-  { key: 'minutes2022', gid: '604639145', sheetName: 'Minutes 2022', file: 'minutes-2022.json', year: 2022 },
-  { key: 'minutes2023', gid: '1637353649', sheetName: 'Minutes 2023', file: 'minutes-2023.json', year: 2023 },
-  { key: 'minutes2024', gid: '1395348588', sheetName: 'Minutes 2024', file: 'minutes-2024.json', year: 2024 },
-  { key: 'minutes2025', gid: '445980238', sheetName: 'Minutes 2025', file: 'minutes-2025.json', year: 2025 },
-  { key: 'minutes2026', gid: '1924038192', sheetName: 'Minutes 2026', file: 'minutes-2026.json', year: 2026 },
-]
-
-// The two editions of the book. The singers changed the edition in September
-// 2025.
+// One entry per book. `minutes` holds one sheet per year. `editions` holds one
+// "Song Frequency" sheet per edition, from the oldest edition to the newest.
 // Each sheet lists every song of one edition, so it gives the songs that
 // nobody called. The dashboard counts the calls itself, so it reads the page
 // and the title only, and not the "Frequency" column.
-export const BOOK_SHEETS = [
+const BOOK_DEFINITIONS = [
   {
-    key: 'book1991',
-    gid: '588178310',
-    sheetName: 'Song Frequency 1991 (year 2025)',
-    file: 'book-1991.json',
-    edition: '1991',
+    id: 'sacred-harp',
+    label: 'Sacred Harp',
+    title: 'Berlin Sacred Harp',
+    bookName: 'The Sacred Harp',
+    offBookLabel: 'not in either edition',
+    searchHint: 'e.g. Windham, 38b, Mara',
+    spreadsheetId: '1lM9ijnQKsV0GdaZcOe3bbDtIWXlk4RoFEfDc7Xn48Sc',
+    minutes: [
+      { gid: '258489324', sheetName: 'Minutes 2021', file: 'minutes-2021.json', year: 2021 },
+      { gid: '604639145', sheetName: 'Minutes 2022', file: 'minutes-2022.json', year: 2022 },
+      { gid: '1637353649', sheetName: 'Minutes 2023', file: 'minutes-2023.json', year: 2023 },
+      { gid: '1395348588', sheetName: 'Minutes 2024', file: 'minutes-2024.json', year: 2024 },
+      { gid: '445980238', sheetName: 'Minutes 2025', file: 'minutes-2025.json', year: 2025 },
+      { gid: '1924038192', sheetName: 'Minutes 2026', file: 'minutes-2026.json', year: 2026 },
+    ],
+    // The singers changed the edition in September 2025.
+    editions: [
+      {
+        id: '1991',
+        label: '1991 edition',
+        gid: '588178310',
+        sheetName: 'Song Frequency 1991 (year 2025)',
+        file: 'book-1991.json',
+        // The music of the 1991 edition starts on page 26, so these three rows
+        // of the sheet hold no song.
+        excludedPages: ['24t', '24b', '25'],
+      },
+      {
+        id: '2025',
+        label: '2025 edition',
+        gid: '954249996',
+        sheetName: 'Song Frequency 2026',
+        file: 'book-2025.json',
+      },
+    ],
   },
   {
-    key: 'book2025',
-    gid: '954249996',
-    sheetName: 'Song Frequency 2026',
-    file: 'book-2025.json',
-    edition: '2025',
+    id: 'shenandoah',
+    label: 'Shenandoah Harmony',
+    title: 'Berlin Shenandoah Harmony',
+    bookName: 'The Shenandoah Harmony',
+    offBookLabel: 'not in the book',
+    searchHint: 'e.g. Stroudwater, 12b, Caro',
+    spreadsheetId: '1V3Z_OYA3hxPvri0PbKSbl5czhBOIV7tNb1qMUsazhdo',
+    minutes: [
+      { gid: '1883806332', sheetName: 'Minutes 2021', file: 'minutes-2021.json', year: 2021 },
+      { gid: '422137562', sheetName: 'Minutes 2022', file: 'minutes-2022.json', year: 2022 },
+      { gid: '1289395992', sheetName: 'Minutes 2023', file: 'minutes-2023.json', year: 2023 },
+      { gid: '1422186979', sheetName: 'Minutes 2024', file: 'minutes-2024.json', year: 2024 },
+      { gid: '867681210', sheetName: 'Minutes 2025', file: 'minutes-2025.json', year: 2025 },
+      { gid: '245867035', sheetName: 'Minutes 2026', file: 'minutes-2026.json', year: 2026 },
+    ],
+    // The book has one edition, so the dashboard shows no edition filter.
+    editions: [
+      {
+        id: 'shenandoah',
+        label: 'The Shenandoah Harmony',
+        gid: '1535479059',
+        sheetName: 'Song Frequency',
+        file: 'book-shenandoah.json',
+      },
+    ],
   },
 ]
 
-export const SHEETS = [...MINUTES_SHEETS, ...BOOK_SHEETS]
-
-export function csvUrl(gid) {
-  return `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/export?format=csv&gid=${gid}`
+// The book owns the spreadsheet, so every sheet of a book carries the same ID.
+// The `key` and the `file` carry the book, because the two books have a sheet
+// with the same name for each year.
+function stamp(book, sheet, kind) {
+  return {
+    ...sheet,
+    kind,
+    bookId: book.id,
+    spreadsheetId: book.spreadsheetId,
+    key: `${book.id}/${sheet.file}`,
+    file: `${book.id}/${sheet.file}`,
+  }
 }
 
-export function sheetUrl(gid) {
-  return `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/edit?gid=${gid}`
+export const BOOKS = BOOK_DEFINITIONS.map((book) => ({
+  ...book,
+  url: sheetUrl({ spreadsheetId: book.spreadsheetId, gid: book.minutes[0].gid }),
+  minutes: book.minutes.map((sheet) => stamp(book, sheet, 'minutes')),
+  editions: book.editions.map((edition) => stamp(book, edition, 'edition')),
+}))
+
+export const SHEETS = BOOKS.flatMap((book) => [...book.minutes, ...book.editions])
+
+export function csvUrl(sheet) {
+  return `https://docs.google.com/spreadsheets/d/${sheet.spreadsheetId}/export?format=csv&gid=${sheet.gid}`
+}
+
+export function sheetUrl(sheet) {
+  return `https://docs.google.com/spreadsheets/d/${sheet.spreadsheetId}/edit?gid=${sheet.gid}`
 }
 
 // Download one sheet and give back the same shape as the snapshot files.
 // It throws if the sheet is not public: Google then sends an HTML sign-in page.
 //
 // The rows are arrays and the column names sit in `columns`. The dashboard
-// bundles eight snapshots, so this shape keeps the bundle small.
+// bundles a snapshot of every sheet, so this shape keeps the bundle small.
 export async function fetchSheet(sheet, options = {}) {
-  const response = await fetch(csvUrl(sheet.gid), {
+  const response = await fetch(csvUrl(sheet), {
     redirect: 'follow',
     signal: options.signal,
   })
@@ -77,10 +136,10 @@ export async function fetchSheet(sheet, options = {}) {
 
   return {
     source: {
-      spreadsheetId: SPREADSHEET_ID,
+      spreadsheetId: sheet.spreadsheetId,
       gid: sheet.gid,
       sheetName: sheet.sheetName,
-      url: sheetUrl(sheet.gid),
+      url: sheetUrl(sheet),
     },
     fetchedAt: new Date().toISOString(),
     columns,

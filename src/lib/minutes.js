@@ -1,13 +1,15 @@
-import { CURRENT_EDITION, findSong, foldTitle, pageOrder } from './books.js'
+import { findSong, foldTitle, pageOrder } from './books.js'
 
 // Column names in the "Minutes" sheets. The sheet owners type these headers,
-// so keep the lookup tolerant: match on a prefix of the header. The 2021 sheet
-// has no header over the first column, so `order` can be absent.
+// so keep the lookup tolerant: match on a prefix of the header. The Sacred
+// Harp sheet writes "Name(s) of Leaders" and the Shenandoah sheet writes
+// "Name(s)". The Sacred Harp sheet of 2021 has no header over the first
+// column, so `order` can be absent.
 const COLUMN_PREFIXES = {
   order: 'Order of entry',
   event: 'Event',
   date: 'Date',
-  leaders: 'Name(s) of Leaders',
+  leaders: 'Name(s)',
   page: 'Page',
   title: 'Song Title',
   notes: 'Notes',
@@ -152,41 +154,48 @@ export function cleanAllRows(sheets) {
 /**
  * Say which edition of the book the singers used on each singing day.
  *
- * The evidence is the page and the title of each call. A page and title that
- * only one edition has names that edition. A day with no such call takes the
- * edition of the day before it, because the change of the edition runs one way:
- * once the singers use the 2025 edition, they never go back.
+ * A book with one edition gives that edition to every day. In a book with two
+ * editions the evidence is the page and the title of each call. A page and
+ * title that only one edition has names that edition. A day with no such call
+ * takes the edition of the day before it, because the change of the edition
+ * runs one way: once the singers use the newer edition, they never go back.
  */
 export function assignEditions(calls, book) {
+  const days = [...new Set(calls.map((call) => call.date))].sort()
+  if (book.editionIds.length === 1) {
+    return new Map(days.map((day) => [day, book.editionIds[0]]))
+  }
+
+  const [older, newer] = book.editionIds
   const evidence = new Map()
   for (const call of calls) {
     const fold = foldTitle(call.title)
     const page = call.page.trim()
-    const inOld = book.byPageTitle.has(`1991|${page}|${fold}`)
-    const inNew = book.byPageTitle.has(`2025|${page}|${fold}`)
+    const inOld = book.byPageTitle.has(`${older}|${page}|${fold}`)
+    const inNew = book.byPageTitle.has(`${newer}|${page}|${fold}`)
     if (inOld === inNew) continue
-    const counts = evidence.get(call.date) ?? { 1991: 0, 2025: 0 }
-    counts[inNew ? '2025' : '1991'] += 1
+    const counts = evidence.get(call.date) ?? { [older]: 0, [newer]: 0 }
+    counts[inNew ? newer : older] += 1
     evidence.set(call.date, counts)
   }
 
-  const days = [...new Set(calls.map((call) => call.date))].sort()
   const editions = new Map()
   let latest = null
   for (const day of days) {
     const counts = evidence.get(day)
     let edition = latest
     if (counts) {
-      if (counts['2025'] > counts['1991']) edition = '2025'
-      else if (counts['1991'] > counts['2025']) edition = '1991'
+      if (counts[newer] > counts[older]) edition = newer
+      else if (counts[older] > counts[newer]) edition = older
     }
-    // The change runs one way, so a later day never returns to the 1991 edition.
-    if (latest === '2025') edition = '2025'
+    // The change runs one way, so a later day never returns to the older
+    // edition.
+    if (latest === newer) edition = newer
     editions.set(day, edition)
     if (edition) latest = edition
   }
   // A day before the first day with evidence takes the first known edition.
-  const firstKnown = days.map((day) => editions.get(day)).find(Boolean) ?? CURRENT_EDITION
+  const firstKnown = days.map((day) => editions.get(day)).find(Boolean) ?? book.currentEdition
   for (const day of days) {
     if (!editions.get(day)) editions.set(day, firstKnown)
   }
@@ -197,15 +206,15 @@ export function assignEditions(calls, book) {
 /**
  * Attach the song of the book to each call.
  *
- * A call that matches no song of either edition keeps `songId` null. The sheet
- * holds seven such rows: a typed page such as "???" or "Xxx", and two German
- * carols that the book does not have.
+ * A call that matches no song of the book keeps `songId` null. The Sacred Harp
+ * sheets hold seven such rows: a typed page such as "???" or "Xxx", and two
+ * German carols that the book does not have.
  */
 export function resolveCalls(calls, book) {
   const editions = assignEditions(calls, book)
   let offBookCalls = 0
   const resolved = calls.map((call) => {
-    const edition = editions.get(call.date) ?? CURRENT_EDITION
+    const edition = editions.get(call.date) ?? book.currentEdition
     const song = findSong(book, edition, call.page, call.title)
     if (!song) offBookCalls += 1
     return { ...call, edition, songId: song ? song.id : null }
@@ -223,20 +232,23 @@ export function editionsOf(calls) {
  *
  * `songs` holds the songs of the book that the chosen years are about. A song
  * with no call gets a count of 0, so the dashboard can show the songs that
- * nobody called. `editions` says which page and title to show: the 2025
+ * nobody called. `editions` says which page and title to show: the newer
  * edition wins when the chosen years use it.
  */
-export function buildLeaderboard(calls, songs = [], editions = new Set([CURRENT_EDITION])) {
-  const showNew = editions.has('2025')
+export function buildLeaderboard(calls, book, songs = [], editions = null) {
+  const [older, newer] = [book.editionIds[0], book.currentEdition]
+  const inUse = editions ?? new Set([book.currentEdition])
+  const showNew = inUse.has(newer)
   const board = new Map()
 
   function label(song) {
-    const shown = (showNew ? song.editions['2025'] : null) ?? song.editions['1991'] ?? song.editions['2025']
-    const older = song.editions['1991']
-    const movedFrom = showNew && older && song.editions['2025'] && older.page !== song.editions['2025'].page
-      ? older.page
-      : null
-    return { page: shown.page, title: shown.title, movedFrom, order: shown.order }
+    const shown = (showNew ? song.editions[newer] : null) ?? song.editions[older] ?? song.editions[newer]
+    const before = song.editions[older]
+    const movedFrom =
+      showNew && before && song.editions[newer] && before.page !== song.editions[newer].page
+        ? before.page
+        : null
+    return { page: shown.page, title: shown.title, movedFrom, order: shown.order, entry: shown }
   }
 
   for (const song of songs) {
@@ -246,6 +258,8 @@ export function buildLeaderboard(calls, songs = [], editions = new Set([CURRENT_
       page: shown.page,
       title: shown.title,
       movedFrom: shown.movedFrom,
+      source: shown.entry.source,
+      mode: shown.entry.mode,
       status: song.status,
       editions: song.editions,
       bookOrder: shown.order,
@@ -263,8 +277,10 @@ export function buildLeaderboard(calls, songs = [], editions = new Set([CURRENT_
         page: call.page,
         title: call.title,
         movedFrom: null,
+        source: '',
+        mode: '',
         status: call.songId ? 'both' : 'off-book',
-        editions: { 1991: null, 2025: null },
+        editions: {},
         bookOrder: pageOrder(call.page),
         count: 0,
         calls: [],
@@ -316,13 +332,13 @@ export function summarise(calls, leaderboard) {
   }
 }
 
-// A search matches a song on its title or on the page of either edition, so
+// A search matches a song on its title or on the page of any edition, so
 // "178" and "178t" both find "Africa".
 export function matchesQuery(song, query) {
   const needle = foldTitle(query)
   if (needle === '') return true
   if (foldTitle(song.title).includes(needle)) return true
-  const pages = [song.page, song.editions['1991']?.page, song.editions['2025']?.page]
+  const pages = [song.page, ...Object.values(song.editions).map((entry) => entry?.page)]
   return pages.some((page) => page && page.toLowerCase().startsWith(needle))
 }
 

@@ -1,22 +1,15 @@
-// The two editions of the book, and the link between them.
+// The songs of one book, and the link between its editions.
 //
-// The singers changed the edition in September 2025. The 1991 edition has 554
-// songs on pages 26 to 573. The 2025 edition has 590 songs on pages 26 to 575.
-// The 2025 edition adds songs, removes songs, and moves a few songs to a new
-// page: "Africa" moves from 178 to 178t.
+// A book has one or two editions. The Shenandoah Harmony has one. The Sacred
+// Harp has two: the singers changed the edition in September 2025. The 1991
+// edition has 554 songs on pages 26 to 573. The 2025 edition has 590 songs on
+// pages 26 to 575. The 2025 edition adds songs, removes songs, and moves a few
+// songs to a new page: "Africa" moves from 178 to 178t.
 //
 // A song must stay one song across the two editions, so this module builds a
 // crosswalk. Each song gets one `id`, and it keeps the page and the title of
 // each edition it belongs to. The dashboard counts the calls of the two
 // editions together under that one id.
-
-export const EDITIONS = [
-  { id: '1991', label: '1991 edition', shortLabel: '1991 edition' },
-  { id: '2025', label: '2025 edition', shortLabel: '2025 edition' },
-]
-
-// The current edition. Its page and title are the ones the dashboard shows.
-export const CURRENT_EDITION = '2025'
 
 // Curly and straight apostrophes must match each other: the 1991 sheet writes
 // a straight apostrophe in "O'Leary" and the 2025 sheet writes a curly one.
@@ -28,12 +21,32 @@ export function foldTitle(value) {
     .trim()
 }
 
+const ROMAN_DIGITS = { i: 1, v: 5, x: 10, l: 50, c: 100, d: 500, m: 1000 }
+
+// The value of a roman page number, or null. The front matter of the
+// Shenandoah Harmony carries "When Jesus Wept" on page viii.
+function romanValue(page) {
+  if (!/^[ivxlcdm]+$/i.test(page)) return null
+  const digits = [...page.toLowerCase()].map((char) => ROMAN_DIGITS[char])
+  let total = 0
+  for (let i = 0; i < digits.length; i += 1) {
+    total += digits[i] < digits[i + 1] ? -digits[i] : digits[i]
+  }
+  return total
+}
+
 // "48b" sorts after "48t" the way the book runs: page number, then t before b.
+// A roman page belongs to the front matter, so it sorts before page 1.
 export function pageOrder(page) {
-  const match = /^(\d+)\s*([tb]?)$/.exec(page.trim())
-  if (!match) return Number.MAX_SAFE_INTEGER
-  const [, number, half] = match
-  return Number(number) * 10 + (half === 'b' ? 1 : 0)
+  const text = page.trim()
+  const match = /^(\d+)\s*([tb]?)$/.exec(text)
+  if (match) {
+    const [, number, half] = match
+    return Number(number) * 10 + (half === 'b' ? 1 : 0)
+  }
+  const roman = romanValue(text)
+  if (roman !== null) return roman - 10000
+  return Number.MAX_SAFE_INTEGER
 }
 
 export function pageNumber(page) {
@@ -42,11 +55,15 @@ export function pageNumber(page) {
 }
 
 // Read one "Song Frequency" sheet. It lists every song of one edition.
+// The sheet of the Shenandoah Harmony also names the source book and the mode
+// of each song. The sheets of the Sacred Harp do not, so both stay optional.
 export function readBookIndex(rawRows) {
   return rawRows
     .map((row) => ({
       page: (row.Page ?? '').trim(),
       title: (row.Title ?? '').trim(),
+      source: (row['Source Abbr.'] ?? '').trim(),
+      mode: (row.Mode ?? '').trim(),
     }))
     .filter((song) => song.page !== '' && song.title !== '')
     .map((song) => ({
@@ -155,38 +172,40 @@ function crosswalk(oldIndex, newIndex) {
   return { pairs, removed: unmatchedOld, added: unmatchedNew }
 }
 
-// Rows of a "Song Frequency" sheet that no edition of the book has. The music
-// of the 1991 edition starts on page 26, so pages 24t, 24b and 25 hold no song.
-// The 1991 edition has 554 songs, and these three rows make it 557.
-const EXCLUDED_PAGES = {
-  1991: ['24t', '24b', '25'],
-  2025: [],
-}
-
+// Rows of a "Song Frequency" sheet that the edition does not have. The music
+// of the 1991 Sacred Harp starts on page 26, so its pages 24t, 24b and 25 hold
+// no song. That edition has 554 songs, and these three rows make it 557.
 function dropExcluded(edition, index) {
-  const excluded = new Set(EXCLUDED_PAGES[edition] ?? [])
+  const excluded = new Set(edition.excludedPages ?? [])
   return index.filter((song) => !excluded.has(song.page))
 }
 
-function songId(edition, song) {
-  return `${edition}:${song.page}|${song.fold}`
+function songId(editionId, song) {
+  return `${editionId}:${song.page}|${song.fold}`
 }
 
 /**
- * Build the song list of the book from the two edition sheets.
+ * Build the song list of one book from its edition sheets.
  *
- * Every song gets one entry with the page and the title of each edition it
- * belongs to. A song that only the 1991 edition has keeps the status
- * "removed". A song that only the 2025 edition has keeps the status "added".
+ * `definition` is the book from `sheets.js`. `indexes` holds one read index
+ * per edition id. Every song gets one entry with the page and the title of
+ * each edition it belongs to. In a book with two editions, a song that only
+ * the older edition has keeps the status "removed", and a song that only the
+ * newer edition has keeps the status "added".
  */
-export function buildBook(indexes) {
-  const oldIndex = dropExcluded('1991', indexes['1991'] ?? [])
-  const newIndex = dropExcluded('2025', indexes['2025'] ?? [])
-  const { pairs, removed, added } = crosswalk(oldIndex, newIndex)
+export function buildBook(definition, indexes) {
+  const editionIds = definition.editions.map((edition) => edition.id)
+  if (editionIds.length > 2) {
+    throw new Error('The crosswalk joins two editions, so a book cannot have more than two.')
+  }
+  const currentEdition = editionIds[editionIds.length - 1]
+  const cleaned = definition.editions.map((edition) =>
+    dropExcluded(edition, indexes[edition.id] ?? []),
+  )
   const songs = []
 
   function push(id, editions, status) {
-    const current = editions['2025'] ?? editions['1991']
+    const current = editions[currentEdition] ?? editions[editionIds[0]]
     songs.push({
       id,
       status,
@@ -198,11 +217,18 @@ export function buildBook(indexes) {
     })
   }
 
-  for (const [oldSong, newSong] of pairs) {
-    push(songId('2025', newSong), { 1991: oldSong, 2025: newSong }, 'both')
+  if (editionIds.length === 1) {
+    const [only] = editionIds
+    for (const song of cleaned[0]) push(songId(only, song), { [only]: song }, 'both')
+  } else {
+    const [older, newer] = editionIds
+    const { pairs, removed, added } = crosswalk(cleaned[0], cleaned[1])
+    for (const [oldSong, newSong] of pairs) {
+      push(songId(newer, newSong), { [older]: oldSong, [newer]: newSong }, 'both')
+    }
+    for (const song of added) push(songId(newer, song), { [older]: null, [newer]: song }, 'added')
+    for (const song of removed) push(songId(older, song), { [older]: song, [newer]: null }, 'removed')
   }
-  for (const song of added) push(songId('2025', song), { 1991: null, 2025: song }, 'added')
-  for (const song of removed) push(songId('1991', song), { 1991: song, 2025: null }, 'removed')
 
   songs.sort((a, b) => a.bookOrder - b.bookOrder)
 
@@ -210,40 +236,44 @@ export function buildBook(indexes) {
   const byPageTitle = new Map()
   const byTitle = new Map()
   for (const song of songs) {
-    for (const edition of ['1991', '2025']) {
-      const inEdition = song.editions[edition]
+    for (const editionId of editionIds) {
+      const inEdition = song.editions[editionId]
       if (!inEdition) continue
-      byPageTitle.set(`${edition}|${inEdition.page}|${inEdition.fold}`, song)
-      const titleKey = `${edition}|${inEdition.fold}`
+      byPageTitle.set(`${editionId}|${inEdition.page}|${inEdition.fold}`, song)
+      const titleKey = `${editionId}|${inEdition.fold}`
       const found = byTitle.get(titleKey)
       byTitle.set(titleKey, found === undefined ? song : null)
     }
   }
 
-  return { songs, byPageTitle, byTitle }
+  return { definition, editionIds, currentEdition, songs, byPageTitle, byTitle }
 }
 
 /**
  * Find the song of one minute row.
  *
  * `edition` is the edition the singers used on that day. The search widens
- * step by step, because the sheet holds a few typed pages that no edition has,
- * such as "???" for "Mear" and "Xxx" for a carol that is not in the book.
+ * step by step, because a sheet holds a few typed pages that no edition has,
+ * such as "???" for "Mear" and "Xxx" for a carol that is not in the book. Each
+ * pass tries the edition of the day first and then every other edition.
  */
 export function findSong(book, edition, page, title) {
   const fold = foldTitle(title)
-  const other = edition === '2025' ? '1991' : '2025'
   const cleanPage = page.trim()
-  // The sheet also holds a title with a note in brackets at the end, such as
+  // A sheet also holds a title with a note in brackets at the end, such as
   // "My Home (First) (red book)". The last pass drops that note.
   const short = foldTitle(title.replace(/\s*\([^()]*\)\s*$/, ''))
-  return (
-    book.byPageTitle.get(`${edition}|${cleanPage}|${fold}`) ??
-    book.byPageTitle.get(`${other}|${cleanPage}|${fold}`) ??
-    book.byTitle.get(`${edition}|${fold}`) ??
-    book.byTitle.get(`${other}|${fold}`) ??
-    book.byPageTitle.get(`${edition}|${cleanPage}|${short}`) ??
-    book.byPageTitle.get(`${other}|${cleanPage}|${short}`) ??
-    null
-  )
+  const order = [edition, ...book.editionIds.filter((id) => id !== edition)]
+  const passes = [
+    (id) => book.byPageTitle.get(`${id}|${cleanPage}|${fold}`),
+    (id) => book.byTitle.get(`${id}|${fold}`),
+    (id) => book.byPageTitle.get(`${id}|${cleanPage}|${short}`),
+  ]
+  for (const pass of passes) {
+    for (const id of order) {
+      const found = pass(id)
+      if (found) return found
+    }
+  }
+  return null
 }
