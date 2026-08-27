@@ -65,8 +65,12 @@ The bundle holds eight snapshots, so this shape keeps the bundle small.
 ## The two editions of the book
 
 The singers changed the book in September 2025. The first singing with the new
-book is 25.09.2025. The 1991 revision has 557 songs on pages 24 to 573. The 2025
+book is 25.09.2025. The 1991 revision has 554 songs on pages 26 to 573. The 2025
 revision has 590 songs on pages 26 to 575.
+
+The "Song Frequency 1991" sheet holds three rows that no edition has: pages 24t,
+24b and 25. The music of the 1991 revision starts on page 26. `EXCLUDED_PAGES`
+in `src/lib/books.js` drops these three rows.
 
 The change moves some songs to a new page. "Africa" moves from page 178 to page
 178t. A song must stay one song across the two editions, so `src/lib/books.js`
@@ -82,7 +86,7 @@ five passes, from the strictest to the loosest:
    as "Carmathen" to "Carmarthen" on page 473.
 5. A very similar title on any page: "Kingwood" on 266 to "Kingswood" on 323b.
 
-The result is 666 songs: 481 songs in both editions, 109 new songs, and 76 songs
+The result is 663 songs: 481 songs in both editions, 109 new songs, and 73 songs
 that went out. 19 of the matched songs have a new page number.
 
 The dashboard counts the calls of the two editions under one song. "Africa" has
@@ -121,9 +125,9 @@ and it shows the rank of each song. The "Never called" list and the "All songs"
 list run in book order. These two lists show no rank.
 
 The set of songs behind the two lists follows the year filter. The years 2021 to
-2024 use the 1991 revision only, so the book has 557 songs. The year 2026 uses
+2024 use the 1991 revision only, so the book has 554 songs. The year 2026 uses
 the 2025 revision only, so the book has 590 songs. A selection that crosses the
-change of the book gives all 666 songs.
+change of the book gives all 663 songs.
 
 The footer of the dashboard reports how many rows it skipped and how many dates
 it corrected.

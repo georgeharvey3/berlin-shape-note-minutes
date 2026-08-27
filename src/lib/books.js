@@ -81,7 +81,7 @@ function titleSimilarity(a, b) {
  * The match runs in five passes, from the strictest to the loosest. Each pass
  * takes only the songs that no earlier pass matched:
  *
- *  1. Same page and same title. This matches 457 of the 557 songs of 1991.
+ *  1. Same page and same title. This matches 457 of the 554 songs of 1991.
  *  2. The title appears once in the rest of the other edition. This catches a
  *     song that moved to a new page, such as "Africa" from 178 to 178t.
  *  3. The title appears more than once. The nearest page wins. The book has
@@ -155,6 +155,19 @@ function crosswalk(oldIndex, newIndex) {
   return { pairs, removed: unmatchedOld, added: unmatchedNew }
 }
 
+// Rows of a "Song Frequency" sheet that no edition of the book has. The music
+// of the 1991 revision starts on page 26, so pages 24t, 24b and 25 hold no
+// song. The 1991 revision has 554 songs, and these three rows make it 557.
+const EXCLUDED_PAGES = {
+  1991: ['24t', '24b', '25'],
+  2025: [],
+}
+
+function dropExcluded(edition, index) {
+  const excluded = new Set(EXCLUDED_PAGES[edition] ?? [])
+  return index.filter((song) => !excluded.has(song.page))
+}
+
 function songId(edition, song) {
   return `${edition}:${song.page}|${song.fold}`
 }
@@ -167,8 +180,8 @@ function songId(edition, song) {
  * "removed". A song that only the 2025 revision has keeps the status "added".
  */
 export function buildBook(indexes) {
-  const oldIndex = indexes['1991'] ?? []
-  const newIndex = indexes['2025'] ?? []
+  const oldIndex = dropExcluded('1991', indexes['1991'] ?? [])
+  const newIndex = dropExcluded('2025', indexes['2025'] ?? [])
   const { pairs, removed, added } = crosswalk(oldIndex, newIndex)
   const songs = []
 
