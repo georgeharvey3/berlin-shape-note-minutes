@@ -222,6 +222,16 @@ export default function BookDashboard({ definition, live }) {
     definition.editions.map((edition) => [edition.id, edition.label]),
   )
 
+  // The opening line of the index. It names the book and the years the totals
+  // below it count, so a reader who scrolled past the year filter still knows
+  // what the numbers cover.
+  const scopeLine =
+    years.length === 0
+      ? definition.bookName
+      : allYears
+        ? `${definition.bookName} · minutes ${years[0]} to ${years[years.length - 1]}`
+        : `${definition.bookName} · minutes ${activeYears.join(', ')}`
+
   function pick(next) {
     setPickedView({ query, view: next })
     setOpenSong(null)
@@ -270,7 +280,10 @@ export default function BookDashboard({ definition, live }) {
 
   return (
     <>
+      <p className="lede">{scopeLine}</p>
+
       <section className="years" aria-label="Which years to count">
+        <span className="field-label">Years</span>
         <div className="years-row" role="group">
           <button
             type="button"
@@ -298,33 +311,35 @@ export default function BookDashboard({ definition, live }) {
         </div>
       </section>
 
+      {/* A band of totals between two rules. The figure comes first and the
+          word for it sits underneath, as in a printed table of totals. */}
       <section className="stats" aria-label="Totals">
-        <div className="stat stat-hero">
-          <span className="stat-label">Calls in the minutes</span>
-          <span className="stat-value hero">{summary.totalCalls.toLocaleString('en-GB')}</span>
+        <div className="stat">
+          <span className="stat-value">{summary.totalCalls.toLocaleString('en-GB')}</span>
+          <span className="stat-label">Calls</span>
         </div>
         <div className="stat">
-          <span className="stat-label">Songs called</span>
           <span className="stat-value">{summary.uniqueSongs}</span>
+          <span className="stat-label">Songs called</span>
         </div>
         <div className="stat">
-          <span className="stat-label">Never called</span>
           <span className="stat-value">{summary.uncalledSongs}</span>
+          <span className="stat-label">Never called</span>
         </div>
         <div className="stat">
-          <span className="stat-label">Singing days</span>
           <span className="stat-value">{summary.singingDays}</span>
+          <span className="stat-label">Singing days</span>
         </div>
         <div className="stat">
-          <span className="stat-label">Leaders</span>
           <span className="stat-value">{summary.leaders}</span>
+          <span className="stat-label">Leaders</span>
         </div>
       </section>
 
       <section className="board" aria-label="Song leaderboard">
         <div className="controls">
           <label className="search">
-            <span className="search-label">Find a song, page or leader</span>
+            <span className="field-label">Find a song, page or leader</span>
             <input
               type="search"
               value={query}
@@ -333,21 +348,71 @@ export default function BookDashboard({ definition, live }) {
               autoComplete="off"
             />
           </label>
-          {!leaderView && (
-            <div className="views" role="group" aria-label="Which songs to show">
-              {SONG_SETS.map((option) => (
-                <button
-                  key={option.id}
-                  type="button"
-                  className={songSet === option.id ? 'view on' : 'view'}
-                  aria-pressed={songSet === option.id}
-                  onClick={() => chooseSet(option.id)}
-                >
-                  {option.label}
-                </button>
-              ))}
+
+          {EDITION_SETS.length > 0 && (
+            <div className="edition-filter">
+              <span className="field-label">Edition</span>
+              <div className="views" role="group" aria-label="Which edition the song is in">
+                {EDITION_SETS.map((option) => (
+                  <button
+                    key={option.id}
+                    type="button"
+                    className={activeEditionSet === option.id ? 'view on' : 'view'}
+                    aria-pressed={activeEditionSet === option.id}
+                    disabled={!editionSetAvailable[option.id]}
+                    onClick={() => chooseEditionSet(option.id)}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
             </div>
           )}
+        </div>
+
+        {/* The head of the list. The filters stand on the left, the count of
+            what the list shows on the right, and the rule under both is the
+            head rule of the table. */}
+        <div className="board-head">
+          <div className="board-head-filters">
+            {!leaderView && (
+              <div className="views" role="group" aria-label="Which songs to show">
+                {SONG_SETS.map((option) => (
+                  <button
+                    key={option.id}
+                    type="button"
+                    className={songSet === option.id ? 'view on' : 'view'}
+                    aria-pressed={songSet === option.id}
+                    onClick={() => chooseSet(option.id)}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {searching && hasLeaders && hasSongs && (
+              <div className="views" role="group" aria-label="Search view">
+                <button
+                  type="button"
+                  className={leaderView ? 'view' : 'view on'}
+                  onClick={() => pick('songs')}
+                  aria-pressed={!leaderView}
+                >
+                  Songs ({songMatches.length})
+                </button>
+                <button
+                  type="button"
+                  className={leaderView ? 'view on' : 'view'}
+                  onClick={() => pick('leader')}
+                  aria-pressed={leaderView}
+                >
+                  Called by {leaderLabel} ({leaderCalls})
+                </button>
+              </div>
+            )}
+          </div>
+
           <p className="result-count" role="status">
             {leaderView
               ? `${leaderLabel} called ${leaderCalls} songs · ${board.length} different songs`
@@ -358,47 +423,6 @@ export default function BookDashboard({ definition, live }) {
                   : `${inSet.length} songs`}
           </p>
         </div>
-
-        {EDITION_SETS.length > 0 && (
-          <div className="edition-filter">
-            <span className="edition-filter-label">Edition</span>
-            <div className="views" role="group" aria-label="Which edition the song is in">
-              {EDITION_SETS.map((option) => (
-                <button
-                  key={option.id}
-                  type="button"
-                  className={activeEditionSet === option.id ? 'view on' : 'view'}
-                  aria-pressed={activeEditionSet === option.id}
-                  disabled={!editionSetAvailable[option.id]}
-                  onClick={() => chooseEditionSet(option.id)}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {searching && hasLeaders && hasSongs && (
-          <div className="views views-search" role="group" aria-label="Search view">
-            <button
-              type="button"
-              className={leaderView ? 'view' : 'view on'}
-              onClick={() => pick('songs')}
-              aria-pressed={!leaderView}
-            >
-              Songs ({songMatches.length})
-            </button>
-            <button
-              type="button"
-              className={leaderView ? 'view on' : 'view'}
-              onClick={() => pick('leader')}
-              aria-pressed={leaderView}
-            >
-              Called by {leaderLabel} ({leaderCalls})
-            </button>
-          </div>
-        )}
 
         {visible.length === 0 ? (
           <p className="empty">

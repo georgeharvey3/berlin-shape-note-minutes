@@ -20,7 +20,8 @@ totals selects the years. Every year counts by default. A second filter selects
 the songs that leaders called, the songs that nobody called, or all songs in the
 book.
 
-Stack: React 18 and Vite. No chart library and no UI framework.
+Stack: React 18 and Vite. No chart library and no UI framework. The two
+fonts come from the bundle, so the app keeps its type without a network.
 
 ## Commands
 
@@ -277,9 +278,33 @@ songs that the book does not have.
 | `src/data/sacred-harp/book-2025.json` | The fallback snapshot of the 2025 edition |
 | `src/data/shenandoah/book-shenandoah.json` | The fallback snapshot of the Shenandoah Harmony |
 | `scripts/sync-minutes.mjs` | The script that writes all snapshots |
+| `tokens.css` | Every color, font, space, and size that the page uses |
+| `src/styles.css` | The style of the page, built on the tokens |
+
+## The design of the page
+
+The page is the index of a book, so it is set like one. A masthead names the
+record and carries the tab of each book. A band of totals sits between two
+rules. Then the list of songs follows. There are no cards, and every division
+on the page is a hairline rule.
+
+Two faces carry the page. Newsreader is a serif, and it sets the wordmark,
+every figure, every song title, and every page number. IBM Plex Sans is a sans,
+and it sets the field labels, the filters, and the colophon. A reader can
+therefore tell the record from the tool.
+
+`tokens.css` at the root holds every color, font, space, and size of the page.
+`src/styles.css` refers to these tokens by name and holds no raw value. A
+change to one token changes the whole page.
 
 ## Colors
 
-The palette is the validated data-visualization default: blue `#2a78d6` for the
-bars on the light surface, and blue `#3987e5` on the dark surface. The dashboard
-follows the color scheme of the browser.
+The palette is a two-color press: warm oat paper, brown-black ink, and one
+brick red. The color values are OKLCH in `tokens.css`. The dashboard follows
+the color scheme of the browser.
+
+The red marks the active filter, a link, and the focus ring. The bars of the
+leaderboard use `--color-bar`, which is the same red at low chroma. The bars
+therefore read as printed ink and leave the accent for the controls.
+
+Every pair of text and background passes WCAG 4.5:1, in both color schemes.
