@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toObjects } from './lib/sheets.js'
 import { buildBook, readBookIndex } from './lib/books.js'
 import { forBook } from './lib/useLiveSnapshots.js'
@@ -53,6 +53,14 @@ function editionSets(book) {
   ]
 }
 
+// The edition filter the dashboard starts with. A book with two editions
+// starts on its newer edition, because the singers use that book now. A book
+// with one edition has no filter.
+function defaultEditionSet(book) {
+  if (book.editions.length < 2) return 'any'
+  return `in-${book.editions[book.editions.length - 1].id}`
+}
+
 /**
  * The dashboard of one book.
  *
@@ -62,7 +70,7 @@ function editionSets(book) {
 export default function BookDashboard({ definition, live }) {
   const [query, setQuery] = useState('')
   const [songSet, setSongSet] = useState('called')
-  const [editionSet, setEditionSet] = useState('any')
+  const [editionSet, setEditionSet] = useState(() => defaultEditionSet(definition))
   const [showAll, setShowAll] = useState(false)
   const [openSong, setOpenSong] = useState(null)
   // null means every year. A list means the years the reader chose.
@@ -243,6 +251,12 @@ export default function BookDashboard({ definition, live }) {
     else setChosenYears([...wanted].sort((a, b) => a - b))
   }
 
+  // The heading of the page and the title of the tab say the same thing.
+  const pageTitle = `${definition.title} · minutes ${years[0]}\u2013${years[years.length - 1]}`
+  useEffect(() => {
+    document.title = pageTitle
+  }, [pageTitle])
+
   function chooseAllYears() {
     setChosenYears(null)
     setOpenSong(null)
@@ -252,10 +266,7 @@ export default function BookDashboard({ definition, live }) {
   return (
     <>
       <header className="masthead">
-        <p className="eyebrow">
-          {definition.title} · minutes {years[0]}–{years[years.length - 1]}
-        </p>
-        <h1>Which song gets called the most?</h1>
+        <h1>{pageTitle}</h1>
       </header>
 
       <section className="years" aria-label="Which years to count">
