@@ -8,8 +8,8 @@
  * pre-emit critique: P5 H5 E5 S5 R5 V4
  *
  * The page is the index of a book, so it is set like one: a masthead, the run
- * of years, and then the list. There are no cards. Every division is a
- * hairline.
+ * of years, and then the list. There is no prose. There are no cards. Every
+ * division is a hairline.
  *
  * Two faces. The serif carries the record — the wordmark, every figure, every
  * song title, every page number. The sans carries the tool — the field labels,
@@ -119,17 +119,6 @@ body {
   border-bottom: var(--rule-hair) solid var(--color-rule-2);
 }
 
-/* ---------- the opening line of the index ---------- */
-
-.lede {
-  margin: var(--space-lg) 0 0;
-  max-width: var(--measure);
-  font-family: var(--font-display);
-  font-size: var(--text-lg);
-  line-height: 1.4;
-  color: var(--color-ink-2);
-}
-
 /* ---------- S4 · the field labels ---------- */
 
 .field-label {
@@ -144,7 +133,7 @@ body {
 /* ---------- the run of years ---------- */
 
 .years {
-  margin: var(--space-xl) 0 0;
+  margin: var(--space-lg) 0 0;
   padding-bottom: var(--space-lg);
   border-bottom: var(--rule-hair) solid var(--color-rule);
 }

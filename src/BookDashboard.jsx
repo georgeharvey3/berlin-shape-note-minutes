@@ -220,16 +220,6 @@ export default function BookDashboard({ definition, live }) {
     definition.editions.map((edition) => [edition.id, edition.label]),
   )
 
-  // The opening line of the index. It names the book and the years the totals
-  // below it count, so a reader who scrolled past the year filter still knows
-  // what the numbers cover.
-  const scopeLine =
-    years.length === 0
-      ? definition.bookName
-      : allYears
-        ? `${definition.bookName} · minutes ${years[0]} to ${years[years.length - 1]}`
-        : `${definition.bookName} · minutes ${activeYears.join(', ')}`
-
   function pick(next) {
     setPickedView({ query, view: next })
     setOpenSong(null)
@@ -278,8 +268,6 @@ export default function BookDashboard({ definition, live }) {
 
   return (
     <>
-      <p className="lede">{scopeLine}</p>
-
       <section className="years" aria-label="Which years to count">
         <span className="field-label">Years</span>
         <div className="years-row" role="group">
