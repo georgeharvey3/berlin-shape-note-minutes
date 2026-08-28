@@ -9,7 +9,6 @@ import {
   editionsOf,
   songsInEditions,
   buildLeaderboard,
-  summarise,
   matchesQuery,
   findLeaders,
   callsByLeaders,
@@ -134,7 +133,6 @@ export default function BookDashboard({ definition, live }) {
     () => buildLeaderboard(yearCalls, book, bookSongs, editions),
     [yearCalls, book, bookSongs, editions],
   )
-  const summary = useMemo(() => summarise(yearCalls, leaderboard), [yearCalls, leaderboard])
   const mixedEditions = editions.size > 1
 
   // A song that the newer edition added needs that edition on screen, and a
@@ -308,31 +306,6 @@ export default function BookDashboard({ definition, live }) {
               </button>
             )
           })}
-        </div>
-      </section>
-
-      {/* A band of totals between two rules. The figure comes first and the
-          word for it sits underneath, as in a printed table of totals. */}
-      <section className="stats" aria-label="Totals">
-        <div className="stat">
-          <span className="stat-value">{summary.totalCalls.toLocaleString('en-GB')}</span>
-          <span className="stat-label">Calls</span>
-        </div>
-        <div className="stat">
-          <span className="stat-value">{summary.uniqueSongs}</span>
-          <span className="stat-label">Songs called</span>
-        </div>
-        <div className="stat">
-          <span className="stat-value">{summary.uncalledSongs}</span>
-          <span className="stat-label">Never called</span>
-        </div>
-        <div className="stat">
-          <span className="stat-value">{summary.singingDays}</span>
-          <span className="stat-label">Singing days</span>
-        </div>
-        <div className="stat">
-          <span className="stat-value">{summary.leaders}</span>
-          <span className="stat-label">Leaders</span>
         </div>
       </section>
 

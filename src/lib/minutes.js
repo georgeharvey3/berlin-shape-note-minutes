@@ -322,16 +322,6 @@ export function songsInEditions(book, editions) {
   return book.songs.filter((song) => [...editions].some((edition) => song.editions[edition]))
 }
 
-export function summarise(calls, leaderboard) {
-  return {
-    totalCalls: calls.length,
-    uniqueSongs: leaderboard.filter((song) => song.count > 0).length,
-    uncalledSongs: leaderboard.filter((song) => song.count === 0).length,
-    singingDays: new Set(calls.map((call) => call.date)).size,
-    leaders: new Set(calls.map((call) => call.leader).filter(Boolean)).size,
-  }
-}
-
 // A search matches a song on the title or the page of any edition, so "178"
 // and "178t" both find "Africa", and "Ode on Life's Journey" finds the song
 // that page 227 now calls "Ode of Life's Journey".
