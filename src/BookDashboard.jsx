@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toObjects } from './lib/sheets.js'
 import { buildBook, readBookIndex } from './lib/books.js'
 import { forBook } from './lib/useLiveSnapshots.js'
@@ -271,6 +271,12 @@ export default function BookDashboard({ definition, live }) {
     else setChosenYears([...wanted].sort((a, b) => a - b))
   }
 
+  // The heading of the page and the title of the tab say the same thing.
+  const pageTitle = `${definition.title} · minutes ${years[0]}\u2013${years[years.length - 1]}`
+  useEffect(() => {
+    document.title = pageTitle
+  }, [pageTitle])
+
   function chooseAllYears() {
     setChosenYears(null)
     setOpenSong(null)
@@ -280,10 +286,7 @@ export default function BookDashboard({ definition, live }) {
   return (
     <>
       <header className="masthead">
-        <p className="eyebrow">
-          {definition.title} · minutes {years[0]}–{years[years.length - 1]}
-        </p>
-        <h1>Which song gets called the most?</h1>
+        <h1>{pageTitle}</h1>
         <p className="lede">
           Every song called at the Berlin singings from {definition.bookName}, out of the shared
           minutes.{' '}
