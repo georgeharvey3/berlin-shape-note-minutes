@@ -489,10 +489,6 @@ export default function BookDashboard({ definition, live }) {
             {status === 'loading' ? 'Reading the sheets…' : 'Read the sheets again'}
           </button>
         </p>
-        <p>
-          The <span aria-hidden="true">↗</span> beside a song opens the page of that song on the
-          Sacred Harp Bremen website.
-        </p>
         {failures.length > 0 && (
           <p className="warning" role="status">
             {failures.length === 1
