@@ -15,7 +15,6 @@ const BOOK_DEFINITIONS = [
   {
     id: 'sacred-harp',
     label: 'Sacred Harp',
-    title: 'Berlin Sacred Harp',
     bookName: 'The Sacred Harp',
     offBookLabel: 'not in either edition',
     searchHint: 'e.g. Windham, 38b, Mara',
@@ -52,7 +51,6 @@ const BOOK_DEFINITIONS = [
   {
     id: 'shenandoah',
     label: 'Shenandoah Harmony',
-    title: 'Berlin Shenandoah Harmony',
     bookName: 'The Shenandoah Harmony',
     offBookLabel: 'not in the book',
     searchHint: 'e.g. Stroudwater, 12b, Caro',
