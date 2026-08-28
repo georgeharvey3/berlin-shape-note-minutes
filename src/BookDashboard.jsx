@@ -16,6 +16,9 @@ import {
 
 const TOP_N = 25
 
+// The years the dashboard counts when it opens.
+const DEFAULT_YEARS = [2026]
+
 // Which part of the book the list shows.
 const SONG_SETS = [
   { id: 'called', label: 'Called' },
@@ -73,8 +76,9 @@ export default function BookDashboard({ definition, live }) {
   const [editionSet, setEditionSet] = useState(() => defaultEditionSet(definition))
   const [showAll, setShowAll] = useState(false)
   const [openSong, setOpenSong] = useState(null)
-  // null means every year. A list means the years the reader chose.
-  const [chosenYears, setChosenYears] = useState(null)
+  // null means every year. A list means the years the reader chose. The
+  // dashboard opens on DEFAULT_YEARS.
+  const [chosenYears, setChosenYears] = useState(DEFAULT_YEARS)
   // A view the user picked by hand, with the query it belongs to. A new query
   // drops the choice and the dashboard picks the view again.
   const [pickedView, setPickedView] = useState(null)
@@ -117,8 +121,14 @@ export default function BookDashboard({ definition, live }) {
     return counts
   }, [calls])
 
-  const allYears = chosenYears === null
-  const activeYears = allYears ? years : chosenYears
+  // A chosen year that the minutes do not hold yet counts for nothing. If no
+  // chosen year stays, the dashboard counts every year.
+  const knownYears = useMemo(
+    () => chosenYears && chosenYears.filter((year) => years.includes(year)),
+    [chosenYears, years],
+  )
+  const allYears = !knownYears || knownYears.length === 0
+  const activeYears = allYears ? years : knownYears
 
   const yearCalls = useMemo(() => {
     if (allYears) return calls
@@ -253,7 +263,7 @@ export default function BookDashboard({ definition, live }) {
       setChosenYears([year])
       return
     }
-    const wanted = new Set(chosenYears)
+    const wanted = new Set(activeYears)
     if (wanted.has(year)) wanted.delete(year)
     else wanted.add(year)
     if (wanted.size === 0 || wanted.size === years.length) setChosenYears(null)
