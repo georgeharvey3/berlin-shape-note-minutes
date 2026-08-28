@@ -10,6 +10,12 @@
 // crosswalk. Each song gets one `id`, and it keeps the page and the title of
 // each edition it belongs to. The dashboard counts the calls of the two
 // editions together under that one id.
+//
+// The book gives the list of the songs that changed their page or their title.
+// `changes` on the newer edition, in `sheets.js`, holds that list. The list is
+// complete, so a song that the list does not name keeps its page and its
+// title. Two songs with the same title on two different pages are therefore
+// two songs, and not one song that moved.
 
 // Curly and straight apostrophes must match each other: the 1991 sheet writes
 // a straight apostrophe in "O'Leary" and the 2025 sheet writes a curly one.
@@ -54,6 +60,14 @@ export function pageNumber(page) {
   return match ? Number(match[1]) : null
 }
 
+// A title without the note in brackets at the end. The 1991 edition writes
+// "My Home (First)" and the 2025 edition drops the "(First)" and "(Second)"
+// notes. A sheet of minutes also adds a note of its own, such as
+// "My Home (First) (red book)".
+export function shortFold(title) {
+  return foldTitle(title.replace(/\s*\([^()]*\)\s*$/, ''))
+}
+
 // Read one "Song Frequency" sheet. It lists every song of one edition.
 // The sheet of the Shenandoah Harmony also names the source book and the mode
 // of each song. The sheets of the Sacred Harp do not, so both stay optional.
@@ -69,6 +83,7 @@ export function readBookIndex(rawRows) {
     .map((song) => ({
       ...song,
       fold: foldTitle(song.title),
+      short: shortFold(song.title),
       order: pageOrder(song.page),
       number: pageNumber(song.page),
     }))
@@ -92,23 +107,39 @@ function titleSimilarity(a, b) {
   return (2 * previous[columns - 1]) / (a.length + b.length)
 }
 
+// True when one title is the other title with a whole word more. The 2025
+// edition names a different tune with such a word: "Imandra" on 45b and
+// "Imandra New" on 525 are two songs, and so are "Wells" and "Wells Second".
+// A pair like this is therefore never a new spelling of one title.
+function addsAWord(a, b) {
+  const [short, long] = a.length <= b.length ? [a, b] : [b, a]
+  return long.startsWith(`${short} `) || long.endsWith(` ${short}`)
+}
+
 /**
  * Build the crosswalk between the two editions.
  *
- * The match runs in five passes, from the strictest to the loosest. Each pass
- * takes only the songs that no earlier pass matched:
+ * `changes` is the list of the songs that changed their page or their title.
+ * It comes from the book, and it is complete.
  *
- *  1. Same page and same title. This matches 457 of the 554 songs of 1991.
- *  2. The title appears once in the rest of the other edition. This catches a
- *     song that moved to a new page, such as "Africa" from 178 to 178t.
- *  3. The title appears more than once. The nearest page wins. The book has
- *     eleven such titles, among them "Exhortation" and "Parting Friends".
+ * The match runs in four passes. Each pass takes only the songs that no
+ * earlier pass matched:
+ *
+ *  1. The change list. It names the page of each edition and the new title,
+ *     so it matches "Africa" on 178 to "Africa" on 178t, and "Southwell" on
+ *     365 to "Southwell" on 364. This pass matches 17 songs.
+ *  2. Same page and same title. This pass matches 457 songs.
+ *  3. Same page, and the same title after the note in brackets goes out. This
+ *     catches the removal of a "(First)" or "(Second)" note. The sheets of
+ *     today give this pass no song, but a later edit of a sheet can.
  *  4. Same page number and a similar title. This catches a new spelling, such
- *     as "Carmathen" to "Carmarthen" on page 473.
- *  5. A very similar title on any page: "Kingwood" on 266 to "Kingswood" on
- *     323b.
+ *     as "Carmathen" to "Carmarthen" on page 473. A title with a whole word
+ *     more names another song, so this pass leaves such a pair alone. This
+ *     pass matches 3 songs.
+ *
+ * The result is 477 of the 554 songs of the 1991 edition.
  */
-function crosswalk(oldIndex, newIndex) {
+function crosswalk(oldIndex, newIndex, changes = []) {
   const pairs = []
   let unmatchedOld = [...oldIndex]
   let unmatchedNew = [...newIndex]
@@ -127,27 +158,27 @@ function crosswalk(oldIndex, newIndex) {
     unmatchedOld = left
   }
 
+  // The change list keys on the page of the older edition. A change that the
+  // sheets no longer carry finds no song, and the later passes take over.
+  const moves = new Map(changes.map((change) => [change.from, change]))
+  pass((song, rest) => {
+    const change = moves.get(song.page)
+    if (!change) return null
+    const wanted = foldTitle(change.title)
+    return rest.find((other) => other.page === change.to && other.fold === wanted) ?? null
+  })
   pass((song, rest) =>
     rest.find((other) => other.page === song.page && other.fold === song.fold),
   )
+  pass((song, rest) =>
+    rest.find((other) => other.page === song.page && other.short === song.short),
+  )
   pass((song, rest) => {
-    const same = rest.filter((other) => other.fold === song.fold)
-    return same.length === 1 ? same[0] : null
-  })
-  // The nearest page wins, so run the low pages first.
-  unmatchedOld.sort((a, b) => a.order - b.order)
-  pass((song, rest) => {
-    const same = rest.filter((other) => other.fold === song.fold)
-    if (same.length === 0) return null
-    return same.reduce((best, other) =>
-      Math.abs(other.order - song.order) < Math.abs(best.order - song.order) ? other : best,
-    )
-  })
-  pass((song, rest) => {
-    const samePage = rest.filter((other) => other.number === song.number)
     let best = null
     let score = 0
-    for (const other of samePage) {
+    for (const other of rest) {
+      if (other.number !== song.number) continue
+      if (addsAWord(song.fold, other.fold)) continue
       const value = titleSimilarity(song.fold, other.fold)
       if (value > score) {
         score = value
@@ -155,18 +186,6 @@ function crosswalk(oldIndex, newIndex) {
       }
     }
     return score >= 0.78 ? best : null
-  })
-  pass((song, rest) => {
-    let best = null
-    let score = 0
-    for (const other of rest) {
-      const value = titleSimilarity(song.fold, other.fold)
-      if (value > score) {
-        score = value
-        best = other
-      }
-    }
-    return score >= 0.92 ? best : null
   })
 
   return { pairs, removed: unmatchedOld, added: unmatchedNew }
@@ -222,7 +241,8 @@ export function buildBook(definition, indexes) {
     for (const song of cleaned[0]) push(songId(only, song), { [only]: song }, 'both')
   } else {
     const [older, newer] = editionIds
-    const { pairs, removed, added } = crosswalk(cleaned[0], cleaned[1])
+    const changes = definition.editions[1].changes ?? []
+    const { pairs, removed, added } = crosswalk(cleaned[0], cleaned[1], changes)
     for (const [oldSong, newSong] of pairs) {
       push(songId(newer, newSong), { [older]: oldSong, [newer]: newSong }, 'both')
     }
@@ -233,16 +253,24 @@ export function buildBook(definition, indexes) {
   songs.sort((a, b) => a.bookOrder - b.bookOrder)
 
   // The lookup tables, one per edition: by page and title, and by title alone.
+  // A title with a note in brackets, such as "My Home (First)", goes in twice.
+  // The newer edition drops such a note, so a call can name the song either
+  // way. A title that two songs of one edition carry gives no answer, so
+  // `byTitle` holds null for it.
   const byPageTitle = new Map()
   const byTitle = new Map()
   for (const song of songs) {
     for (const editionId of editionIds) {
       const inEdition = song.editions[editionId]
       if (!inEdition) continue
-      byPageTitle.set(`${editionId}|${inEdition.page}|${inEdition.fold}`, song)
-      const titleKey = `${editionId}|${inEdition.fold}`
-      const found = byTitle.get(titleKey)
-      byTitle.set(titleKey, found === undefined ? song : null)
+      const folds = new Set([inEdition.fold, inEdition.short])
+      for (const fold of folds) {
+        const pageKey = `${editionId}|${inEdition.page}|${fold}`
+        if (!byPageTitle.has(pageKey)) byPageTitle.set(pageKey, song)
+        const titleKey = `${editionId}|${fold}`
+        const found = byTitle.get(titleKey)
+        byTitle.set(titleKey, found === undefined || found === song ? song : null)
+      }
     }
   }
 
@@ -262,7 +290,7 @@ export function findSong(book, edition, page, title) {
   const cleanPage = page.trim()
   // A sheet also holds a title with a note in brackets at the end, such as
   // "My Home (First) (red book)". The last pass drops that note.
-  const short = foldTitle(title.replace(/\s*\([^()]*\)\s*$/, ''))
+  const short = shortFold(title)
   const order = [edition, ...book.editionIds.filter((id) => id !== edition)]
   const passes = [
     (id) => book.byPageTitle.get(`${id}|${cleanPage}|${fold}`),

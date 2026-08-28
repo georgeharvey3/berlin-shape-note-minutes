@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toObjects } from './lib/sheets.js'
-import { buildBook, readBookIndex } from './lib/books.js'
+import { buildBook, foldTitle, readBookIndex } from './lib/books.js'
 import { forBook } from './lib/useLiveSnapshots.js'
 import {
   cleanAllRows,
@@ -192,6 +192,16 @@ export default function BookDashboard({ definition, live }) {
   const defaultView = hasSongs || !hasLeaders ? 'songs' : 'leader'
   const view = pickedView && pickedView.query === query ? pickedView.view : defaultView
   const leaderView = searching && view === 'leader' && hasLeaders
+
+  // A search that finds nothing often hits a filter, and not a missing song.
+  // The book has "Sermon on the Mount" on page 508, but no leader called it,
+  // so the set "Called" leaves it out. The message then names the filter.
+  const missReason = useMemo(() => {
+    if (!searching || hasSongs) return null
+    if (inBook.some((song) => matchesQuery(song, query))) return 'set'
+    if (leaderboard.some((song) => matchesQuery(song, query))) return 'edition'
+    return null
+  }, [searching, hasSongs, inBook, leaderboard, query])
 
   const board = leaderView ? leaderSongs : songMatches
   // The top-25 cap belongs to the ranked list only.
@@ -401,7 +411,20 @@ export default function BookDashboard({ definition, live }) {
 
         {visible.length === 0 ? (
           <p className="empty">
-            {searching ? `No song matches “${query.trim()}”.` : 'No song in this set.'}
+            {!searching && 'No song in this set.'}
+            {searching && missReason === 'set' && (
+              <>
+                No song of this set matches “{query.trim()}”. The book has it. The list “All songs”
+                shows it.
+              </>
+            )}
+            {searching && missReason === 'edition' && (
+              <>
+                No song of this edition matches “{query.trim()}”. The button “Any” of the edition
+                filter shows it.
+              </>
+            )}
+            {searching && missReason === null && `No song matches “${query.trim()}”.`}
           </p>
         ) : (
           <ol className="rows">
@@ -485,6 +508,12 @@ function SongRow({
   const [older, newer] = [book.editionIds[0], book.currentEdition]
   const oldPage = song.editions[older]?.page
   const newPage = song.editions[newer]?.page
+  const oldTitle = song.editions[older]?.title
+  const newTitle = song.editions[newer]?.title
+  // The 2025 edition gives some songs their original title again: page 227 is
+  // "Ode of Life's Journey" and no longer "Ode on Life's Journey".
+  const renamed =
+    Boolean(oldTitle) && Boolean(newTitle) && foldTitle(oldTitle) !== foldTitle(newTitle)
   const twoEditions = book.editionIds.length > 1
   // The Shenandoah sheet names the source book and the mode of each song.
   const about = [song.mode, song.source].filter(Boolean).join(' · ')
@@ -534,6 +563,11 @@ function SongRow({
             <p className="detail-summary muted">
               Page {newPage} in the {editionLabels[newer]}. The {editionLabels[older]} did not have
               this song.
+            </p>
+          )}
+          {twoEditions && renamed && (
+            <p className="detail-summary muted">
+              The {editionLabels[older]} gives the title “{oldTitle}”.
             </p>
           )}
           {!twoEditions && about !== '' && (

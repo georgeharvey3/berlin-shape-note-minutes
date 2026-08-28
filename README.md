@@ -8,7 +8,7 @@ The singers sing from two books. A tab at the top of the page selects the book:
 
 | Tab | Book | Editions | Songs |
 |---|---|---|---|
-| `Sacred Harp` | The Sacred Harp | 1991 and 2025 | 663 |
+| `Sacred Harp` | The Sacred Harp | 1991 and 2025 | 667 |
 | `Shenandoah Harmony` | The Shenandoah Harmony | one | 469 |
 
 Each book has its own Google Sheet, and each tab has its own dashboard. The two
@@ -92,24 +92,48 @@ The "Song Frequency 1991" sheet holds three rows that no edition has: pages 24t,
 
 The change moves some songs to a new page. "Africa" moves from page 178 to page
 178t. A song must stay one song across the two editions, so `src/lib/books.js`
-builds a crosswalk between the two "Song Frequency" sheets. The match runs in
-five passes, from the strictest to the loosest:
+builds a crosswalk between the two "Song Frequency" sheets.
 
-1. Same page and same title. This pass matches 457 songs.
-2. The title appears once in the rest of the other edition. This pass catches a
-   song that moved to a new page, such as "Africa".
-3. The title appears more than once. The nearest page wins. The book has eleven
-   such titles, among them "Exhortation" and "Parting Friends".
+The book gives the list of the songs that changed their page or their title.
+The field `changes` of the 2025 edition, in `src/lib/sheets.js`, holds that
+list. It has 17 entries:
+
+- Four songs on a new page: "Fellowship" from 330b to 330t, "Southwell" from
+  365 to 364, "Sermon on the Mount" from 507 to 508, and "Hebron" from 566 to
+  565t.
+- Eleven pages that the 2025 edition cuts into a top half and a bottom half.
+  The song keeps the number and takes a "t" or a "b": 27t "Bethel", 178t
+  "Africa", 347t "Christian's Farewell", 414b "Parting Friend", 420b "Bishop",
+  423t "Grantville", 452b "Martin", 497t "Natick", 499b "At Rest", 501b
+  "O'Leary", and 565b "The Hill of Zion".
+- Two songs with the original title again: 227 "Ode of Life's Journey" and 143
+  "Pleyel's Hymn Second".
+
+The list is complete. A song that the list does not name keeps its page and its
+title. Two songs with the same title on two different pages are therefore two
+songs, and not one song that moved. The 2025 edition has "Imandra New" on 45b
+and "Imandra" on 525, and these are two songs.
+
+The match runs in four passes, from the strictest to the loosest:
+
+1. The change list. This pass matches 17 songs.
+2. Same page and same title. This pass matches 457 songs.
+3. Same page, and the same title after the note in brackets goes out. The 1991
+   edition writes "My Home (First)" and the 2025 edition drops such a note. The
+   sheets of today give this pass no song, but a later edit of a sheet can.
 4. Same page number and a similar title. This pass catches a new spelling, such
-   as "Carmathen" to "Carmarthen" on page 473.
-5. A very similar title on any page: "Kingwood" on 266 to "Kingswood" on 323b.
+   as "Carmathen" to "Carmarthen" on page 473. A title with a whole word more
+   names another song, so this pass leaves such a pair alone. This pass matches
+   3 songs.
 
-The result is 663 songs: 481 songs in both editions, 109 new songs, and 73 songs
-that went out. 19 of the matched songs have a new page number.
+The result is 667 songs: 477 songs in both editions, 113 new songs, and 77 songs
+that went out. 15 of the matched songs have a new page.
 
 The dashboard counts the calls of the two editions under one song. "Africa" has
 one row with 16 calls, from 2021 to 2026. The row shows the page of the 2025
 edition and a tag with the old page. The detail of the song names both pages.
+A song with a new title keeps one row too. The detail of that song names the
+title of the 1991 edition, and the search box finds the song under both titles.
 
 Each singing day carries its own edition, so the dashboard needs no cut-off
 date. `assignEditions` reads the page and the title of each call. A page and
@@ -163,7 +187,7 @@ list run in book order. These two lists show no rank.
 The set of songs behind the two lists follows the year filter. In the Sacred
 Harp the years 2021 to 2024 use the 1991 edition only, so the book has 554
 songs. The year 2026 uses the 2025 edition only, so the book has 590 songs. A
-selection that crosses the change of the edition gives all 663 songs.
+selection that crosses the change of the edition gives all 667 songs.
 
 The footer of each tab reports how many rows it skipped and how many dates it
 corrected.
@@ -175,15 +199,15 @@ it has six buttons:
 
 | Button | The songs it gives | Count |
 |---|---|---|
-| `Any` | no restriction | 663 |
+| `Any` | no restriction | 667 |
 | `1991 edition` | the songs of the 1991 edition | 554 |
 | `2025 edition` | the songs of the 2025 edition | 590 |
-| `Both editions` | the songs of both editions | 481 |
-| `New in 2025` | the songs that the 2025 edition added | 109 |
-| `Out in 2025` | the songs that went out | 73 |
+| `Both editions` | the songs of both editions | 477 |
+| `New in 2025` | the songs that the 2025 edition added | 113 |
+| `Out in 2025` | the songs that went out | 77 |
 
 The counts above are the counts for all six years. The year filter cuts them.
-The year 2026 with the button `1991 edition` gives the 481 songs that survived
+The year 2026 with the button `1991 edition` gives the 477 songs that survived
 the change of the edition.
 
 A button turns off when the year filter takes away the only edition that has its
@@ -195,7 +219,7 @@ The three filters work together. The bars follow the year filter and the edition
 filter, so the longest bar of the set on screen is always full. A search does not
 change the length of a bar.
 
-The list "All songs" with the button `Any` gives 668 songs: the 663 songs of the
+The list "All songs" with the button `Any` gives 672 songs: the 667 songs of the
 two editions, and the five songs that neither edition has. The same list in the
 Shenandoah Harmony gives 473 songs: the 469 songs of the book, and the four
 songs that the book does not have.

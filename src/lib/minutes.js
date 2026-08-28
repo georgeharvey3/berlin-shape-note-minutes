@@ -332,13 +332,16 @@ export function summarise(calls, leaderboard) {
   }
 }
 
-// A search matches a song on its title or on the page of any edition, so
-// "178" and "178t" both find "Africa".
+// A search matches a song on the title or the page of any edition, so "178"
+// and "178t" both find "Africa", and "Ode on Life's Journey" finds the song
+// that page 227 now calls "Ode of Life's Journey".
 export function matchesQuery(song, query) {
   const needle = foldTitle(query)
   if (needle === '') return true
-  if (foldTitle(song.title).includes(needle)) return true
-  const pages = [song.page, ...Object.values(song.editions).map((entry) => entry?.page)]
+  const entries = Object.values(song.editions)
+  const titles = [song.title, ...entries.map((entry) => entry?.title)]
+  if (titles.some((title) => title && foldTitle(title).includes(needle))) return true
+  const pages = [song.page, ...entries.map((entry) => entry?.page)]
   return pages.some((page) => page && page.toLowerCase().startsWith(needle))
 }
 
