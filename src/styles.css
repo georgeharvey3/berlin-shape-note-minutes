@@ -313,7 +313,16 @@ h1 {
 
 .row + .row { border-top: 1px solid var(--hairline); }
 
+/* The row of a song: the button that opens the detail, and the link to the
+   page of the song on the Sacred Harp Bremen website. */
+.row-head {
+  display: flex;
+  align-items: center;
+}
+
 .row-button {
+  flex: 1;
+  min-width: 0;
   display: grid;
   grid-template-columns: 28px 46px minmax(120px, 1.1fr) minmax(80px, 2fr) 40px;
   align-items: center;
@@ -402,6 +411,34 @@ h1 {
 .count.zero {
   font-weight: 400;
   color: var(--text-muted);
+}
+
+/* The link to Sacred Harp Bremen, and the gap that holds its place for a song
+   that has no page there. Both keep the counts of every row in one column. */
+.song-link,
+.song-link-gap {
+  flex: none;
+  width: 26px;
+  text-align: center;
+}
+
+.song-link {
+  padding: 6px 0;
+  font-size: 14px;
+  line-height: 1;
+  color: var(--text-muted);
+  text-decoration: none;
+  border-radius: 6px;
+}
+
+.song-link:hover {
+  color: var(--series-1);
+  background: var(--hover);
+}
+
+.song-link:focus-visible {
+  outline: 2px solid var(--series-1);
+  outline-offset: -2px;
 }
 
 .empty {

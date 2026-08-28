@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from 'react'
 import { toObjects } from './lib/sheets.js'
 import { buildBook, foldTitle, readBookIndex } from './lib/books.js'
+import { bremenUrl } from './lib/bremen.js'
 import { forBook } from './lib/useLiveSnapshots.js'
 import {
   cleanAllRows,
@@ -466,6 +467,10 @@ export default function BookDashboard({ definition, live }) {
             {status === 'loading' ? 'Reading the sheets…' : 'Read the sheets again'}
           </button>
         </p>
+        <p>
+          The <span aria-hidden="true">↗</span> beside a song opens the page of that song on the
+          Sacred Harp Bremen website.
+        </p>
         {failures.length > 0 && (
           <p className="warning" role="status">
             {failures.length === 1
@@ -507,28 +512,49 @@ function SongRow({
   const twoEditions = book.editionIds.length > 1
   // The Shenandoah sheet names the source book and the mode of each song.
   const about = [song.mode, song.source].filter(Boolean).join(' · ')
+  // The page of the song on the Sacred Harp Bremen website. A song that no
+  // edition has gets no page there, and therefore no link.
+  const bremen = bremenUrl(book, song)
 
   return (
     <li className={open ? 'row open' : 'row'}>
-      <button
-        type="button"
-        className="row-button"
-        onClick={onToggle}
-        aria-expanded={never ? undefined : open}
-        disabled={never}
-      >
-        <span className="rank">{showRank && !never ? song.rank : ''}</span>
-        <span className="song-page">{song.page}</span>
-        <span className="title">
-          <span className="title-text">{song.title}</span>
-          {showEdition && song.movedFrom && <span className="tag">was {song.movedFrom}</span>}
-          {showEdition && song.status === 'added' && <span className="tag">new in {newer}</span>}
-          {showEdition && song.status === 'removed' && <span className="tag">out in {newer}</span>}
-          {song.status === 'off-book' && <span className="tag">{offBookLabel}</span>}
-        </span>
-        <span className="track">{never ? null : <span className="bar" style={{ width }} />}</span>
-        <span className={never ? 'count zero' : 'count'}>{song.count}</span>
-      </button>
+      <div className="row-head">
+        <button
+          type="button"
+          className="row-button"
+          onClick={onToggle}
+          aria-expanded={never ? undefined : open}
+          disabled={never}
+        >
+          <span className="rank">{showRank && !never ? song.rank : ''}</span>
+          <span className="song-page">{song.page}</span>
+          <span className="title">
+            <span className="title-text">{song.title}</span>
+            {showEdition && song.movedFrom && <span className="tag">was {song.movedFrom}</span>}
+            {showEdition && song.status === 'added' && <span className="tag">new in {newer}</span>}
+            {showEdition && song.status === 'removed' && (
+              <span className="tag">out in {newer}</span>
+            )}
+            {song.status === 'off-book' && <span className="tag">{offBookLabel}</span>}
+          </span>
+          <span className="track">{never ? null : <span className="bar" style={{ width }} />}</span>
+          <span className={never ? 'count zero' : 'count'}>{song.count}</span>
+        </button>
+        {bremen ? (
+          <a
+            className="song-link"
+            href={bremen}
+            target="_blank"
+            rel="noreferrer"
+            title={`${song.page} ${song.title} on Sacred Harp Bremen`}
+            aria-label={`Open ${song.page} ${song.title} on Sacred Harp Bremen`}
+          >
+            <span aria-hidden="true">↗</span>
+          </a>
+        ) : (
+          <span className="song-link-gap" />
+        )}
+      </div>
 
       {open && !never && (
         <div className="detail">
