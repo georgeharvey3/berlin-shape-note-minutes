@@ -153,6 +153,42 @@ The "Song Frequency" sheet of this book also names the source book and the mode
 of each song. The detail of a song shows both, in the line that the Sacred Harp
 uses for its two editions.
 
+## The link to Sacred Harp Bremen
+
+Each song carries a link to the page of that song on the Sacred Harp Bremen
+website. The link is the `↗` at the end of the row of the song. A song with no
+call carries the link too, so the list "Never called" also leads to the website.
+
+Each book has its own site, and the Sacred Harp has one site for each edition:
+
+| Songs | Site |
+|---|---|
+| The 2025 edition of the Sacred Harp | `sacredharpbremen.org` |
+| The songs that only the 1991 edition has | `sh1991.sacredharpbremen.org` |
+| The Shenandoah Harmony | `shenandoah.harmony.sacredharpbremen.org` |
+
+The field `site` of each edition, in `src/lib/sheets.js`, holds the address. A
+song of both editions of the Sacred Harp links to the main site, because that
+site holds the book the singers use now.
+
+The path of a page is the page and the title of the song, as one slug. Page 37t
+"Ester" gives `https://sacredharpbremen.org/37t-ester/`. `src/lib/bremen.js`
+builds the slug with the rule of WordPress, because the sites run on WordPress.
+An apostrophe goes out and leaves no dash, so page 501b "O'Leary" gives
+`501b-oleary`. A note in brackets stays: page 51 "My Home (First)" gives
+`51-my-home-first`.
+
+The "Song Frequency" sheet of the Shenandoah Harmony adds the first line of the
+text to 39 of its 469 titles, after a dash. The slug takes the name of the tune
+alone. Page 5t "Angel's Hymn - The lands that long in darkness lay" therefore
+gives `5t-angels-hymn`. A hyphen inside a word carries no space, so
+"Ninety-Third Psalm" keeps its hyphen.
+
+The dashboard builds each address from the sheet, and it reads no page of the
+website. A title that the website writes another way therefore gives a link to
+a page that does not exist. The two Sacred Harp sheets give 667 addresses and
+the Shenandoah sheet gives 469, and no two songs share an address.
+
 ## How the rows are cleaned
 
 `src/lib/minutes.js` builds the leaderboard from the raw rows. It applies four
@@ -233,6 +269,7 @@ songs that the book does not have.
 | `src/lib/books.js` | The songs of one book and the crosswalk between two editions |
 | `src/lib/minutes.js` | Row cleaning, edition of each day, song counts, search match |
 | `src/lib/csv.js` | The CSV parser |
+| `src/lib/bremen.js` | The link from a song to its page on Sacred Harp Bremen |
 | `src/lib/sheets.js` | The two books, the sheet IDs, the CSV download, and the row reader |
 | `src/lib/useLiveSnapshots.js` | The live read, with the snapshots as fallback |
 | `src/data/<book>/minutes-20NN.json` | The fallback snapshot of one year of minutes |

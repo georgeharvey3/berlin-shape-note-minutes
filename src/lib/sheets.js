@@ -35,6 +35,10 @@ const BOOK_DEFINITIONS = [
         gid: '588178310',
         sheetName: 'Song Frequency 1991 (year 2025)',
         file: 'book-1991.json',
+        // The site that carries the songs of this edition. A song of both
+        // editions links to the site of the 2025 edition, because that site
+        // holds the book the singers use now.
+        site: 'https://sh1991.sacredharpbremen.org',
         // The music of the 1991 edition starts on page 26, so these three rows
         // of the sheet hold no song.
         excludedPages: ['24t', '24b', '25'],
@@ -45,6 +49,7 @@ const BOOK_DEFINITIONS = [
         gid: '954249996',
         sheetName: 'Song Frequency 2026',
         file: 'book-2025.json',
+        site: 'https://sacredharpbremen.org',
         // Every song that changed its page or its title in the 2025 edition.
         // The list is complete: a song that it does not name keeps the page
         // and the title of the 1991 edition. `from` is the page of the 1991
@@ -99,6 +104,7 @@ const BOOK_DEFINITIONS = [
         gid: '1535479059',
         sheetName: 'Song Frequency',
         file: 'book-shenandoah.json',
+        site: 'https://shenandoah.harmony.sacredharpbremen.org',
       },
     ],
   },
