@@ -19,6 +19,10 @@ export default function App() {
 
   return (
     <div className="viz-root page">
+      <header className="masthead">
+        <h1>Berlin Shape Note Minutes</h1>
+      </header>
+
       <nav className="books" aria-label="Which book to show">
         {BOOKS.map((each) => (
           <button
