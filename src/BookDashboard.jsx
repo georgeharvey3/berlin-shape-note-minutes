@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toObjects } from './lib/sheets.js'
-import { buildBook, readBookIndex } from './lib/books.js'
+import { buildBook, foldTitle, readBookIndex } from './lib/books.js'
 import { forBook } from './lib/useLiveSnapshots.js'
 import {
   cleanAllRows,
@@ -485,6 +485,12 @@ function SongRow({
   const [older, newer] = [book.editionIds[0], book.currentEdition]
   const oldPage = song.editions[older]?.page
   const newPage = song.editions[newer]?.page
+  const oldTitle = song.editions[older]?.title
+  const newTitle = song.editions[newer]?.title
+  // The 2025 edition gives some songs their original title again: page 227 is
+  // "Ode of Life's Journey" and no longer "Ode on Life's Journey".
+  const renamed =
+    Boolean(oldTitle) && Boolean(newTitle) && foldTitle(oldTitle) !== foldTitle(newTitle)
   const twoEditions = book.editionIds.length > 1
   // The Shenandoah sheet names the source book and the mode of each song.
   const about = [song.mode, song.source].filter(Boolean).join(' · ')
@@ -534,6 +540,11 @@ function SongRow({
             <p className="detail-summary muted">
               Page {newPage} in the {editionLabels[newer]}. The {editionLabels[older]} did not have
               this song.
+            </p>
+          )}
+          {twoEditions && renamed && (
+            <p className="detail-summary muted">
+              The {editionLabels[older]} gives the title “{oldTitle}”.
             </p>
           )}
           {!twoEditions && about !== '' && (

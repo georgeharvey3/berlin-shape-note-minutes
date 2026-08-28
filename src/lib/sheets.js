@@ -46,6 +46,34 @@ const BOOK_DEFINITIONS = [
         gid: '954249996',
         sheetName: 'Song Frequency 2026',
         file: 'book-2025.json',
+        // Every song that changed its page or its title in the 2025 edition.
+        // The list is complete: a song that it does not name keeps the page
+        // and the title of the 1991 edition. `from` is the page of the 1991
+        // edition. `to` and `title` are the page and the title of the 2025
+        // edition. `src/lib/books.js` matches the two editions with this list.
+        changes: [
+          // A song on a new page.
+          { from: '330b', to: '330t', title: 'Fellowship' },
+          { from: '365', to: '364', title: 'Southwell' },
+          { from: '507', to: '508', title: 'Sermon on the Mount' },
+          { from: '566', to: '565t', title: 'Hebron' },
+          // A page that the 2025 edition cuts into a top half and a bottom
+          // half. The song keeps the number and takes a "t" or a "b".
+          { from: '27', to: '27t', title: 'Bethel' },
+          { from: '178', to: '178t', title: 'Africa' },
+          { from: '347', to: '347t', title: 'Christian’s Farewell' },
+          { from: '414', to: '414b', title: 'Parting Friend' },
+          { from: '420', to: '420b', title: 'Bishop' },
+          { from: '423', to: '423t', title: 'Grantville' },
+          { from: '452', to: '452b', title: 'Martin' },
+          { from: '497', to: '497t', title: 'Natick' },
+          { from: '499', to: '499b', title: 'At Rest' },
+          { from: '501', to: '501b', title: 'O’Leary' },
+          { from: '565', to: '565b', title: 'The Hill of Zion' },
+          // A song with the original title again.
+          { from: '227', to: '227', title: 'Ode of Life’s Journey' },
+          { from: '143', to: '143', title: 'Pleyel’s Hymn Second' },
+        ],
       },
     ],
   },
