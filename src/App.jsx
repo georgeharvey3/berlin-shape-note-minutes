@@ -18,24 +18,29 @@ export default function App() {
   const book = BOOKS.find((each) => each.id === bookId) ?? BOOKS[0]
 
   return (
-    <div className="viz-root page">
+    <div className="page">
+      {/* The masthead of a printed record: the name of the record, the two
+          books as the issue row, and a double rule to close it. */}
       <header className="masthead">
-        <h1>Berlin Shape Note Minutes</h1>
+        <h1 className="mast-name">Berlin Shape Note Minutes</h1>
+
+        <nav className="books" aria-label="Which book to show">
+          {BOOKS.map((each) => (
+            <button
+              key={each.id}
+              type="button"
+              className={each.id === book.id ? 'book on' : 'book'}
+              aria-current={each.id === book.id ? 'page' : undefined}
+              onClick={() => setBookId(each.id)}
+            >
+              {each.label}
+            </button>
+          ))}
+        </nav>
+
+        <hr className="mast-rule" aria-hidden="true" />
       </header>
 
-      <nav className="books" aria-label="Which book to show">
-        {BOOKS.map((each) => (
-          <button
-            key={each.id}
-            type="button"
-            className={each.id === book.id ? 'book on' : 'book'}
-            aria-current={each.id === book.id ? 'page' : undefined}
-            onClick={() => setBookId(each.id)}
-          >
-            {each.label}
-          </button>
-        ))}
-      </nav>
       {/* The key drops the filters and the open song when the reader changes
           the book, because the songs and the pages are not the same. */}
       <BookDashboard key={book.id} definition={book} live={live} />
