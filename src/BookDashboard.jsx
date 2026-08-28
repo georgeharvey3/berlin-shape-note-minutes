@@ -53,6 +53,14 @@ function editionSets(book) {
   ]
 }
 
+// The edition filter the dashboard starts with. A book with two editions
+// starts on its newer edition, because the singers use that book now. A book
+// with one edition has no filter.
+function defaultEditionSet(book) {
+  if (book.editions.length < 2) return 'any'
+  return `in-${book.editions[book.editions.length - 1].id}`
+}
+
 /**
  * The dashboard of one book.
  *
@@ -62,7 +70,7 @@ function editionSets(book) {
 export default function BookDashboard({ definition, live }) {
   const [query, setQuery] = useState('')
   const [songSet, setSongSet] = useState('called')
-  const [editionSet, setEditionSet] = useState('any')
+  const [editionSet, setEditionSet] = useState(() => defaultEditionSet(definition))
   const [showAll, setShowAll] = useState(false)
   const [openSong, setOpenSong] = useState(null)
   // null means every year. A list means the years the reader chose.
