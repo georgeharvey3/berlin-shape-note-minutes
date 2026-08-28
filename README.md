@@ -16,7 +16,7 @@ dashboards have the same layout. The tab of the Sacred Harp adds a filter for
 the edition, because that book has two editions.
 
 Every tab reads six years of minutes, from 2021 to 2026. A filter above the
-totals selects the years. Every year counts by default. A second filter selects
+list selects the years. Every year counts by default. A second filter selects
 the songs that leaders called, the songs that nobody called, or all songs in the
 book.
 
@@ -266,7 +266,7 @@ songs that the book does not have.
 | Path | Content |
 |---|---|
 | `src/App.jsx` | The tab of each book, and the shared live read |
-| `src/BookDashboard.jsx` | The dashboard of one book: filters, totals, search box, leaderboard, song detail |
+| `src/BookDashboard.jsx` | The dashboard of one book: filters, search box, leaderboard, song detail |
 | `src/lib/books.js` | The songs of one book and the crosswalk between two editions |
 | `src/lib/minutes.js` | Row cleaning, edition of each day, song counts, search match |
 | `src/lib/csv.js` | The CSV parser |
@@ -284,9 +284,9 @@ songs that the book does not have.
 ## The design of the page
 
 The page is the index of a book, so it is set like one. A masthead names the
-record and carries the tab of each book. A band of totals sits between two
-rules. Then the list of songs follows. There are no cards, and every division
-on the page is a hairline rule.
+record and carries the tab of each book. The run of years follows, above a
+rule. Then the list of songs follows. There are no cards, and every division on
+the page is a hairline rule.
 
 Two faces carry the page. Newsreader is a serif, and it sets the wordmark,
 every figure, every song title, and every page number. IBM Plex Sans is a sans,

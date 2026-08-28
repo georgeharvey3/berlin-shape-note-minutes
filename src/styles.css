@@ -1,14 +1,14 @@
 /* Hallmark · genre: editorial · macrostructure: Index-First · theme: Almanac
  * tone: editorial / almanac · anchor hue: warm oat 80° · accent hue: brick 33°
  * nav: N6 Newspaper masthead · footer: Ft4 Dense colophon
- * section head: S4 inline small caps · proof: T4 numbered stat strip
- * list: F3 tabular spec sheet · CTA: C3 typographic link
+ * section head: S4 inline small caps · list: F3 tabular spec sheet
+ * CTA: C3 typographic link · proof: none (the list carries the numbers)
  * enrichment: none (typography only) · motion: hover tint only (Index-First is motion-off)
- * contrast: pass (40-41) · 261 rendered text pairs, both themes, no failure
+ * contrast: pass (40-41) · every rendered text pair, both themes, no failure
  * pre-emit critique: P5 H5 E5 S5 R5 V4
  *
- * The page is the index of a book, so it is set like one: a masthead, a band
- * of totals between two rules, and then the list. There are no cards. Every
+ * The page is the index of a book, so it is set like one: a masthead, the run
+ * of years, and then the list. There is no prose. There are no cards. Every
  * division is a hairline.
  *
  * Two faces. The serif carries the record — the wordmark, every figure, every
@@ -119,57 +119,6 @@ body {
   border-bottom: var(--rule-hair) solid var(--color-rule-2);
 }
 
-/* ---------- the opening line of the index ---------- */
-
-.lede {
-  margin: var(--space-lg) 0 0;
-  max-width: var(--measure);
-  font-family: var(--font-display);
-  font-size: var(--text-lg);
-  line-height: 1.4;
-  color: var(--color-ink-2);
-}
-
-/* ---------- T4 · the band of totals ---------- */
-
-.stats {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-md) var(--space-lg);
-  margin: var(--space-lg) 0 0;
-  padding: var(--space-md) 0 var(--space-lg);
-  border-top: var(--rule-hair) solid var(--color-rule-2);
-  border-bottom: var(--rule-hair) solid var(--color-rule);
-}
-
-.stat {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3xs);
-  min-width: 0;
-}
-
-/* The figure comes first and the word for it sits underneath, as in a table
-   of totals in a printed report. */
-.stat-value {
-  font-family: var(--font-display);
-  font-size: var(--text-figure);
-  font-weight: 400;
-  line-height: 1;
-  letter-spacing: var(--track-display);
-  font-variant-numeric: tabular-nums;
-  overflow-wrap: anywhere;
-  min-width: 0;
-  color: var(--color-ink);
-}
-
-.stat-label {
-  font-size: var(--text-2xs);
-  text-transform: uppercase;
-  letter-spacing: var(--track-label);
-  color: var(--color-muted);
-}
-
 /* ---------- S4 · the field labels ---------- */
 
 .field-label {
@@ -184,7 +133,9 @@ body {
 /* ---------- the run of years ---------- */
 
 .years {
-  margin: var(--space-xl) 0 0;
+  margin: var(--space-lg) 0 0;
+  padding-bottom: var(--space-lg);
+  border-bottom: var(--rule-hair) solid var(--color-rule);
 }
 
 .years-row {
@@ -308,7 +259,6 @@ body {
   color: var(--color-ink);
   border-bottom-color: var(--color-accent);
 }
-
 
 .edition-filter {
   display: flex;
@@ -691,12 +641,6 @@ code {
 
 /* ---------- wider pages ---------- */
 
-@media (min-width: 30rem) {
-  .stats {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
 @media (min-width: 40rem) {
   .page {
     padding-bottom: var(--space-3xl);
@@ -717,12 +661,6 @@ code {
 
   .detail {
     margin-inline-start: var(--space-xl);
-  }
-}
-
-@media (min-width: 52rem) {
-  .stats {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 }
 
