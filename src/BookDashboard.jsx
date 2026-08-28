@@ -429,8 +429,6 @@ export default function BookDashboard({ definition, live }) {
                 showEdition={mixedEditions}
                 offBookLabel={definition.offBookLabel}
                 editionLabels={editionLabels}
-                leaderView={leaderView}
-                leaderLabel={leaderLabel}
                 open={openSong === song.key}
                 onToggle={() => setOpenSong(openSong === song.key ? null : song.key)}
               />
@@ -491,15 +489,11 @@ function SongRow({
   showEdition,
   offBookLabel,
   editionLabels,
-  leaderView,
-  leaderLabel,
   open,
   onToggle,
 }) {
   const never = song.count === 0
   const width = `${Math.max((song.count / maxCount) * 100, 2)}%`
-  const firstCall = never ? null : song.calls[0]
-  const lastCall = never ? null : song.calls[song.calls.length - 1]
   const [older, newer] = [book.editionIds[0], book.currentEdition]
   const oldPage = song.editions[older]?.page
   const newPage = song.editions[newer]?.page
@@ -510,59 +504,47 @@ function SongRow({
   const renamed =
     Boolean(oldTitle) && Boolean(newTitle) && foldTitle(oldTitle) !== foldTitle(newTitle)
   const twoEditions = book.editionIds.length > 1
-  // The Shenandoah sheet names the source book and the mode of each song.
-  const about = [song.mode, song.source].filter(Boolean).join(' · ')
   // The page of the song on the Sacred Harp Bremen website. A song that no
-  // edition has gets no page there, and therefore no link.
+  // edition has gets no page there, and therefore no link in the detail.
   const bremen = bremenUrl(book, song)
 
   return (
     <li className={open ? 'row open' : 'row'}>
-      <div className="row-head">
-        <button
-          type="button"
-          className="row-button"
-          onClick={onToggle}
-          aria-expanded={never ? undefined : open}
-          disabled={never}
-        >
-          <span className="rank">{showRank && !never ? song.rank : ''}</span>
-          <span className="song-page">{song.page}</span>
-          <span className="title">
-            <span className="title-text">{song.title}</span>
-            {showEdition && song.movedFrom && <span className="tag">was {song.movedFrom}</span>}
-            {showEdition && song.status === 'added' && <span className="tag">new in {newer}</span>}
-            {showEdition && song.status === 'removed' && (
-              <span className="tag">out in {newer}</span>
-            )}
-            {song.status === 'off-book' && <span className="tag">{offBookLabel}</span>}
-          </span>
-          <span className="track">{never ? null : <span className="bar" style={{ width }} />}</span>
-          <span className={never ? 'count zero' : 'count'}>{song.count}</span>
-        </button>
-        {bremen ? (
-          <a
-            className="song-link"
-            href={bremen}
-            target="_blank"
-            rel="noreferrer"
-            title={`${song.page} ${song.title} on Sacred Harp Bremen`}
-            aria-label={`Open ${song.page} ${song.title} on Sacred Harp Bremen`}
-          >
-            <span aria-hidden="true">↗</span>
-          </a>
-        ) : (
-          <span className="song-link-gap" />
-        )}
-      </div>
+      <button
+        type="button"
+        className="row-button"
+        onClick={onToggle}
+        aria-expanded={never ? undefined : open}
+        disabled={never}
+      >
+        <span className="rank">{showRank && !never ? song.rank : ''}</span>
+        <span className="song-page">{song.page}</span>
+        <span className="title">
+          <span className="title-text">{song.title}</span>
+          {showEdition && song.movedFrom && <span className="tag">was {song.movedFrom}</span>}
+          {showEdition && song.status === 'added' && <span className="tag">new in {newer}</span>}
+          {showEdition && song.status === 'removed' && <span className="tag">out in {newer}</span>}
+          {song.status === 'off-book' && <span className="tag">{offBookLabel}</span>}
+        </span>
+        <span className="track">{never ? null : <span className="bar" style={{ width }} />}</span>
+        <span className={never ? 'count zero' : 'count'}>{song.count}</span>
+      </button>
 
       {open && !never && (
         <div className="detail">
-          <p className="detail-summary">
-            {song.count === 1 ? 'Called once' : `Called ${song.count} times`}
-            {leaderView ? ` by ${leaderLabel}` : ''} · first {firstCall.dateLabel} · last{' '}
-            {lastCall.dateLabel}
-          </p>
+          {bremen && (
+            <p className="detail-summary">
+              <a
+                className="song-link"
+                href={bremen}
+                target="_blank"
+                rel="noreferrer"
+                aria-label={`View ${song.page} ${song.title} on Sacred Harp Bremen`}
+              >
+                View song
+              </a>
+            </p>
+          )}
           {twoEditions && oldPage && newPage && oldPage !== newPage && (
             <p className="detail-summary muted">
               Page {oldPage} in the {editionLabels[older]} and page {newPage} in the{' '}
@@ -584,11 +566,6 @@ function SongRow({
           {twoEditions && renamed && (
             <p className="detail-summary muted">
               The {editionLabels[older]} gives the title “{oldTitle}”.
-            </p>
-          )}
-          {!twoEditions && about !== '' && (
-            <p className="detail-summary muted">
-              Page {song.page} · {about}
             </p>
           )}
           <table>
