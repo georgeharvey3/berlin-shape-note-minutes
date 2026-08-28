@@ -83,7 +83,6 @@ export default function BookDashboard({ definition, live }) {
   const { source, fetchedAt, failures } = forBook(live, definition)
 
   const EDITION_SETS = useMemo(() => editionSets(definition), [definition])
-  const twoEditions = definition.editions.length > 1
 
   // The book, from its "Song Frequency" sheets. In a book with two editions it
   // links a song of the older edition to the same song of the newer one.
@@ -101,18 +100,14 @@ export default function BookDashboard({ definition, live }) {
     [definition, snapshots],
   )
 
-  const { calls, years, repairedDates, droppedRows, offBookCalls, editionDays } = useMemo(() => {
+  const { calls, years } = useMemo(() => {
     const cleaned = cleanAllRows(
       definition.minutes.map((sheet) => ({ sheet, rows: toObjects(snapshots[sheet.key]) })),
     )
     const resolved = resolveCalls(cleaned.calls, book)
     return {
       calls: resolved.calls,
-      editionDays: resolved.editions,
-      offBookCalls: resolved.offBookCalls,
       years: cleaned.years,
-      repairedDates: cleaned.repairedDates,
-      droppedRows: cleaned.droppedRows,
     }
   }, [definition, snapshots, book])
 
@@ -121,14 +116,6 @@ export default function BookDashboard({ definition, live }) {
     for (const call of calls) counts.set(call.year, (counts.get(call.year) ?? 0) + 1)
     return counts
   }, [calls])
-
-  // The first day on which the singers used the newer edition.
-  const changeDay = useMemo(() => {
-    if (!twoEditions) return null
-    const days = [...editionDays.entries()].sort((a, b) => a[0].localeCompare(b[0]))
-    const found = days.find(([, edition]) => edition === book.currentEdition)
-    return found ? found[0] : null
-  }, [editionDays, book, twoEditions])
 
   const allYears = chosenYears === null
   const activeYears = allYears ? years : chosenYears
@@ -213,19 +200,12 @@ export default function BookDashboard({ definition, live }) {
   const visible = capped ? board.slice(0, TOP_N) : board
   const scale = leaderView ? leaderSongs : inBook
   const maxCount = Math.max(1, ...scale.map((song) => song.count))
-  const lastDay = yearCalls.length > 0 ? yearCalls[yearCalls.length - 1].dateLabel : '—'
 
   const leaderLabel =
     leaderNames.length === 1
       ? leaderNames[0]
       : `${leaderNames.length} leaders named “${query.trim()}”`
   const leaderCalls = leaderSongs.reduce((total, song) => total + song.count, 0)
-
-  const yearLabel = allYears
-    ? `${years[0]}–${years[years.length - 1]}`
-    : activeYears.length === 1
-      ? String(activeYears[0])
-      : activeYears.join(', ')
 
   const editionLabels = Object.fromEntries(
     definition.editions.map((edition) => [edition.id, edition.label]),
@@ -287,14 +267,6 @@ export default function BookDashboard({ definition, live }) {
     <>
       <header className="masthead">
         <h1>{pageTitle}</h1>
-        <p className="lede">
-          Every song called at the Berlin singings from {definition.bookName}, out of the shared
-          minutes.{' '}
-          {twoEditions
-            ? 'The singers changed the edition in September 2025, and a song keeps one row across the two editions. '
-            : ''}
-          Latest singing in the data: {lastDay}.
-        </p>
       </header>
 
       <section className="years" aria-label="Which years to count">
@@ -323,16 +295,6 @@ export default function BookDashboard({ definition, live }) {
             )
           })}
         </div>
-        <p className="years-hint">
-          {allYears
-            ? 'Every year counts. Click a year to count that year alone.'
-            : `Counting ${yearLabel}. Click another year to add it, or “All years” to count every year.`}
-          {!twoEditions
-            ? ''
-            : mixedEditions
-              ? ' These years cross the change of the edition, so a page can carry two numbers.'
-              : ` The singers used the ${editionLabels[[...editions][0]] ?? 'book'} in these years.`}
-        </p>
       </section>
 
       <section className="stats" aria-label="Totals">
@@ -498,45 +460,6 @@ export default function BookDashboard({ definition, live }) {
               : `${failures.length} sheets did not answer, so their numbers come from the snapshot. ${failures[0].error}`}
           </p>
         )}
-        {twoEditions ? (
-          <p className="muted">
-            The {definition.editions[0].label} has{' '}
-            {book.songs.filter((song) => song.editions[definition.editions[0].id]).length} songs.
-            The {definition.editions[1].label} has{' '}
-            {book.songs.filter((song) => song.editions[definition.editions[1].id]).length} songs.{' '}
-            {book.songs.filter((song) => song.status === 'added').length} songs are new,{' '}
-            {book.songs.filter((song) => song.status === 'removed').length} songs went out, and{' '}
-            {
-              book.songs.filter(
-                (song) =>
-                  song.status === 'both' &&
-                  song.editions[definition.editions[0].id].page !==
-                    song.editions[definition.editions[1].id].page,
-              ).length
-            }{' '}
-            songs moved to a new page. The two editions give {book.songs.length} songs together. The
-            dashboard counts the calls of the two editions under one song, so Africa on 178 and
-            Africa on 178t are one song.
-          </p>
-        ) : (
-          <p className="muted">
-            {definition.bookName} has {book.songs.length} songs. The book has one edition, so a
-            page carries one number.
-          </p>
-        )}
-        <p className="muted">
-          {changeDay
-            ? `The first singing with the ${book.currentEdition} edition is ${changeDay
-                .split('-')
-                .reverse()
-                .join(
-                  '.',
-                )}. The page and the title of each call name the edition, so the dashboard needs no cut-off date. `
-            : ''}
-          {droppedRows} empty or unresolved minute rows skipped. {repairedDates} rows had a
-          fill-down year in the Date column; their day and month match a real singing, so the year
-          is moved back. {offBookCalls} calls name a song that is {definition.offBookLabel}.
-        </p>
       </footer>
     </>
   )

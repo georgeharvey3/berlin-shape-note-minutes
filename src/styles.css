@@ -103,12 +103,6 @@ h1 {
   font-weight: 650;
 }
 
-.lede {
-  margin: 0;
-  max-width: 60ch;
-  color: var(--text-secondary);
-}
-
 /* ---------- year filter ---------- */
 
 .years {
@@ -157,12 +151,6 @@ h1 {
 }
 
 .year.on .year-count { color: var(--series-1); }
-
-.years-hint {
-  margin: 8px 0 0;
-  font-size: 12px;
-  color: var(--text-muted);
-}
 
 /* ---------- stat tiles ---------- */
 
