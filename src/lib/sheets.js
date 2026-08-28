@@ -17,7 +17,7 @@ const BOOK_DEFINITIONS = [
     label: 'Sacred Harp',
     bookName: 'The Sacred Harp',
     offBookLabel: 'not in either edition',
-    searchHint: 'e.g. Windham, 38b, Mara',
+    searchHint: 'e.g. Windham, 38b, George',
     spreadsheetId: '1lM9ijnQKsV0GdaZcOe3bbDtIWXlk4RoFEfDc7Xn48Sc',
     minutes: [
       { gid: '258489324', sheetName: 'Minutes 2021', file: 'minutes-2021.json', year: 2021 },
@@ -86,7 +86,7 @@ const BOOK_DEFINITIONS = [
     label: 'Shenandoah Harmony',
     bookName: 'The Shenandoah Harmony',
     offBookLabel: 'not in the book',
-    searchHint: 'e.g. Stroudwater, 12b, Caro',
+    searchHint: 'e.g. Stroudwater, 12b, George',
     spreadsheetId: '1V3Z_OYA3hxPvri0PbKSbl5czhBOIV7tNb1qMUsazhdo',
     minutes: [
       { gid: '1883806332', sheetName: 'Minutes 2021', file: 'minutes-2021.json', year: 2021 },
