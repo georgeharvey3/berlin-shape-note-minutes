@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from 'react'
 import { toObjects } from './lib/sheets.js'
 import { buildBook, foldTitle, readBookIndex } from './lib/books.js'
 import { bremenUrl } from './lib/bremen.js'
+import { TAGS, useSongTags } from './lib/tags.js'
 import { forBook } from './lib/useLiveSnapshots.js'
 import {
   cleanAllRows,
@@ -24,6 +25,7 @@ const SONG_SETS = [
   { id: 'called', label: 'Called' },
   { id: 'uncalled', label: 'Never called' },
   { id: 'all', label: 'All songs' },
+  { id: 'tagged', label: 'Tagged' },
 ]
 
 /**
@@ -82,6 +84,9 @@ export default function BookDashboard({ definition, live }) {
   // A view the user picked by hand, with the query it belongs to. A new query
   // drops the choice and the dashboard picks the view again.
   const [pickedView, setPickedView] = useState(null)
+  // The tag that the set "Tagged" shows, or 'any' for every tagged song.
+  const [tagFilter, setTagFilter] = useState('any')
+  const { tagsOf, toggle: toggleTag } = useSongTags(definition.id)
 
   const { snapshots, status, refresh } = live
   const { source, fetchedAt, failures } = forBook(live, definition)
@@ -171,11 +176,19 @@ export default function BookDashboard({ definition, live }) {
   const inSet = useMemo(() => {
     if (songSet === 'called') return inBook.filter((song) => song.count > 0)
     const byBook = (a, b) => a.bookOrder - b.bookOrder
+    if (songSet === 'tagged') {
+      return inBook
+        .filter((song) => {
+          const tags = tagsOf(song.key)
+          return tagFilter === 'any' ? tags.length > 0 : tags.includes(tagFilter)
+        })
+        .sort(byBook)
+    }
     if (songSet === 'uncalled') {
       return inBook.filter((song) => song.count === 0).sort(byBook)
     }
     return [...inBook].sort(byBook)
-  }, [inBook, songSet])
+  }, [inBook, songSet, tagsOf, tagFilter])
 
   const songMatches = useMemo(
     () => inSet.filter((song) => matchesQuery(song, query)),
@@ -244,6 +257,11 @@ export default function BookDashboard({ definition, live }) {
   function chooseSet(next) {
     setSongSet(next)
     setShowAll(false)
+    setOpenSong(null)
+  }
+
+  function chooseTag(next) {
+    setTagFilter(next)
     setOpenSong(null)
   }
 
@@ -362,6 +380,22 @@ export default function BookDashboard({ definition, live }) {
               </div>
             )}
 
+            {!leaderView && songSet === 'tagged' && (
+              <div className="views" role="group" aria-label="Which tag to show">
+                {[{ id: 'any', label: 'Any tag' }, ...TAGS].map((option) => (
+                  <button
+                    key={option.id}
+                    type="button"
+                    className={tagFilter === option.id ? 'view on' : 'view'}
+                    aria-pressed={tagFilter === option.id}
+                    onClick={() => chooseTag(option.id)}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            )}
+
             {searching && hasLeaders && hasSongs && (
               <div className="views" role="group" aria-label="Search view">
                 <button
@@ -391,13 +425,18 @@ export default function BookDashboard({ definition, live }) {
                 ? `${board.length} of ${inSet.length} songs match`
                 : capped
                   ? `Top ${Math.min(TOP_N, inSet.length)} of ${inSet.length} songs`
-                  : `${inSet.length} songs`}
+                  : `${inSet.length} ${inSet.length === 1 ? 'song' : 'songs'}`}
           </p>
         </div>
 
         {visible.length === 0 ? (
           <p className="empty">
-            {!searching && 'No song in this set.'}
+            {!searching && songSet !== 'tagged' && 'No song in this set.'}
+            {!searching &&
+              songSet === 'tagged' &&
+              (tagFilter === 'any'
+                ? 'No tagged song yet. Open a song to tag it.'
+                : `No song tagged “${TAGS.find((tag) => tag.id === tagFilter)?.label}”.`)}
             {searching && missReason === 'set' && (
               <>
                 No song of this set matches “{query.trim()}”. The book has it. The list “All songs”
@@ -424,6 +463,8 @@ export default function BookDashboard({ definition, live }) {
                 showEdition={mixedEditions}
                 offBookLabel={definition.offBookLabel}
                 editionLabels={editionLabels}
+                tags={tagsOf(song.key)}
+                onToggleTag={(tag) => toggleTag(song.key, tag)}
                 open={openSong === song.key}
                 onToggle={() => setOpenSong(openSong === song.key ? null : song.key)}
               />
@@ -480,6 +521,8 @@ function SongRow({
   showEdition,
   offBookLabel,
   editionLabels,
+  tags,
+  onToggleTag,
   open,
   onToggle,
 }) {
@@ -515,6 +558,11 @@ function SongRow({
           {showEdition && song.status === 'added' && <span className="tag">new in {newer}</span>}
           {showEdition && song.status === 'removed' && <span className="tag">out in {newer}</span>}
           {song.status === 'off-book' && <span className="tag">{offBookLabel}</span>}
+          {TAGS.filter((tag) => tags.includes(tag.id)).map((tag) => (
+            <span key={tag.id} className="tag mine">
+              {tag.label}
+            </span>
+          ))}
         </span>
         <span className="track">{never ? null : <span className="bar" style={{ width }} />}</span>
         <span className={never ? 'count zero' : 'count'}>{song.count}</span>
@@ -522,6 +570,23 @@ function SongRow({
 
       {open && (
         <div className="detail">
+          <div className="tag-picker" role="group" aria-label={`Tags for ${song.title}`}>
+            <span className="field-label">Your tags</span>
+            {TAGS.map((tag) => {
+              const on = tags.includes(tag.id)
+              return (
+                <button
+                  key={tag.id}
+                  type="button"
+                  className={on ? 'tag-toggle on' : 'tag-toggle'}
+                  aria-pressed={on}
+                  onClick={() => onToggleTag(tag.id)}
+                >
+                  {tag.label}
+                </button>
+              )
+            })}
+          </div>
           {bremen && (
             <p className="detail-summary">
               <a
