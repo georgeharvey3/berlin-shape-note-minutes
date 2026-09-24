@@ -505,8 +505,7 @@ function SongRow({
         type="button"
         className="row-button"
         onClick={onToggle}
-        aria-expanded={never ? undefined : open}
-        disabled={never}
+        aria-expanded={open}
       >
         <span className="rank">{showRank && !never ? song.rank : ''}</span>
         <span className="song-page">{song.page}</span>
@@ -521,7 +520,7 @@ function SongRow({
         <span className={never ? 'count zero' : 'count'}>{song.count}</span>
       </button>
 
-      {open && !never && (
+      {open && (
         <div className="detail">
           {bremen && (
             <p className="detail-summary">
@@ -559,24 +558,28 @@ function SongRow({
               The {editionLabels[older]} gives the title “{oldTitle}”.
             </p>
           )}
-          <table>
-            <thead>
-              <tr>
-                <th scope="col">Date</th>
-                <th scope="col">Leader</th>
-                <th scope="col">Note</th>
-              </tr>
-            </thead>
-            <tbody>
-              {song.calls.map((call) => (
-                <tr key={`${call.date}-${call.order}`}>
-                  <td>{call.dateLabel}</td>
-                  <td>{call.leader || '—'}</td>
-                  <td className="muted">{call.notes || ''}</td>
+          {never ? (
+            <p className="detail-summary muted">No calls.</p>
+          ) : (
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">Date</th>
+                  <th scope="col">Leader</th>
+                  <th scope="col">Note</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {song.calls.map((call) => (
+                  <tr key={`${call.date}-${call.order}`}>
+                    <td>{call.dateLabel}</td>
+                    <td>{call.leader || '—'}</td>
+                    <td className="muted">{call.notes || ''}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       )}
     </li>

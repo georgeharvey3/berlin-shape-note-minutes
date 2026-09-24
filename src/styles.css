@@ -581,14 +581,6 @@ code {
   cursor: not-allowed;
 }
 
-/* A song that nobody called opens nothing, so its row is not a control and
-   its cursor says so without dimming the row. */
-.row-button:disabled {
-  opacity: 1;
-  color: inherit;
-  cursor: default;
-}
-
 /* ---------- hover, on devices that have one ---------- */
 
 @media (hover: hover) and (pointer: fine) {
