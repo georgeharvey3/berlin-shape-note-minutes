@@ -355,8 +355,11 @@ body {
   color: var(--color-ink-2);
 }
 
+/* The tags wrap under a title that needs the room, so the title stays legible. */
 .title {
   display: flex;
+  flex-wrap: wrap;
+  row-gap: var(--space-3xs);
   align-items: baseline;
   min-width: 0;
   font-family: var(--font-display);
@@ -387,6 +390,12 @@ body {
   background: none;
   border: var(--rule-hair) solid var(--color-rule-2);
   border-radius: var(--radius-sm);
+}
+
+/* A tag the reader put on the song, told apart from the tags of the book. */
+.tag.mine {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
 }
 
 .track {
@@ -464,6 +473,36 @@ body {
   margin: 0 var(--space-2xs) var(--space-md);
   padding: var(--space-sm) 0 var(--space-xs) var(--space-md);
   border-inline-start: var(--rule-hair) solid var(--color-rule-2);
+}
+
+/* The reader's own tags. A tag reads as a word; on, it takes the accent. */
+.tag-picker {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2xs) var(--space-sm);
+  margin: 0 0 var(--space-sm);
+}
+
+.tag-toggle {
+  padding: var(--space-3xs) var(--space-xs);
+  font-family: var(--font-body);
+  font-size: var(--text-3xs);
+  line-height: 1.5;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  white-space: nowrap;
+  color: var(--color-muted);
+  background: none;
+  border: var(--rule-hair) solid var(--color-rule-2);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.tag-toggle.on {
+  font-weight: 600;
+  color: var(--color-accent);
+  border-color: var(--color-accent);
 }
 
 .detail-summary {
@@ -605,6 +644,10 @@ code {
     background: var(--color-wash);
   }
 
+  .tag-toggle:hover {
+    color: var(--color-ink);
+  }
+
   .more:hover,
   .link-button:hover:not(:disabled),
   .song-link:hover,
@@ -619,8 +662,14 @@ code {
   .year,
   .view,
   .more,
-  .link-button {
+  .link-button,
+  .tag-toggle {
     min-height: var(--control-height);
+  }
+
+  .tag-toggle {
+    display: inline-flex;
+    align-items: center;
   }
 
   .view,
