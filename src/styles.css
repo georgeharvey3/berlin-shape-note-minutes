@@ -355,13 +355,11 @@ body {
   color: var(--color-ink-2);
 }
 
-/* The tags wrap under a title that needs the room, so the title stays legible. */
 .title {
   display: flex;
-  flex-wrap: wrap;
-  row-gap: var(--space-3xs);
   align-items: baseline;
   min-width: 0;
+  overflow: hidden;
   font-family: var(--font-display);
   font-size: var(--text-lg);
   line-height: 1.25;
@@ -370,6 +368,7 @@ body {
 
 /* The title takes the ellipsis, so a tag beside it stays whole. */
 .title-text {
+  min-width: 5em;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -392,10 +391,18 @@ body {
   border-radius: var(--radius-sm);
 }
 
-/* A tag the reader put on the song, told apart from the tags of the book. */
+/* A tag the reader put on the song, told apart from the tags of the book.
+   It sits on the title line and is small enough to leave the title room. */
 .tag.mine {
+  margin-inline-start: var(--space-2xs);
+  padding: 0 var(--space-3xs);
+  letter-spacing: 0.04em;
   color: var(--color-accent);
   border-color: var(--color-accent);
+}
+
+.tag.mine.extra {
+  display: none;
 }
 
 .track {
@@ -476,16 +483,21 @@ body {
 }
 
 /* The reader's own tags. A tag reads as a word; on, it takes the accent. */
+/* The label stands over the buttons, so the four buttons fit on one line. */
 .tag-picker {
   display: flex;
   flex-wrap: wrap;
-  align-items: baseline;
-  gap: var(--space-2xs) var(--space-sm);
+  align-items: center;
+  gap: var(--space-2xs) var(--space-xs);
   margin: 0 0 var(--space-sm);
 }
 
+.tag-picker .field-label {
+  flex-basis: 100%;
+}
+
 .tag-toggle {
-  padding: var(--space-3xs) var(--space-xs);
+  padding: var(--space-3xs) var(--space-2xs);
   font-family: var(--font-body);
   font-size: var(--text-3xs);
   line-height: 1.5;
@@ -662,14 +674,13 @@ code {
   .year,
   .view,
   .more,
-  .link-button,
-  .tag-toggle {
+  .link-button {
     min-height: var(--control-height);
   }
 
+  /* The tag buttons stay compact; 2rem is still an easy tap. */
   .tag-toggle {
-    display: inline-flex;
-    align-items: center;
+    min-height: 2rem;
   }
 
   .view,
@@ -698,6 +709,14 @@ code {
 
   .rank {
     display: block;
+  }
+
+  .tag.mine.extra {
+    display: inline;
+  }
+
+  .tag.mine.more-tags {
+    display: none;
   }
 
   .detail {

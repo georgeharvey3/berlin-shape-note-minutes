@@ -558,11 +558,18 @@ function SongRow({
           {showEdition && song.status === 'added' && <span className="tag">new in {newer}</span>}
           {showEdition && song.status === 'removed' && <span className="tag">out in {newer}</span>}
           {song.status === 'off-book' && <span className="tag">{offBookLabel}</span>}
-          {TAGS.filter((tag) => tags.includes(tag.id)).map((tag) => (
-            <span key={tag.id} className="tag mine">
+          {/* A narrow page shows the first tag and a count of the rest, so the
+              row stays on one line. */}
+          {TAGS.filter((tag) => tags.includes(tag.id)).map((tag, index) => (
+            <span key={tag.id} className={index === 0 ? 'tag mine' : 'tag mine extra'}>
               {tag.label}
             </span>
           ))}
+          {tags.length > 1 && (
+            <span className="tag mine more-tags">
+              +{tags.length - 1}
+            </span>
+          )}
         </span>
         <span className="track">{never ? null : <span className="bar" style={{ width }} />}</span>
         <span className={never ? 'count zero' : 'count'}>{song.count}</span>
