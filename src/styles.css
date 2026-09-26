@@ -673,8 +673,7 @@ code {
   .book,
   .year,
   .view,
-  .more,
-  .link-button {
+  .more {
     min-height: var(--control-height);
   }
 
@@ -684,10 +683,25 @@ code {
   }
 
   .view,
-  .more,
-  .link-button {
+  .more {
     display: inline-flex;
     align-items: center;
+  }
+
+  /* The footnote button keeps its underline under the words, as the link
+     beside it does. The 44px to tap is an invisible box around it. */
+  .link-button {
+    position: relative;
+  }
+
+  .link-button::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: var(--control-height);
+    transform: translateY(-50%);
   }
 }
 
