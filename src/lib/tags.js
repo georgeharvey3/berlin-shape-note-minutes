@@ -5,7 +5,7 @@
 import { useCallback, useEffect, useState } from 'react'
 
 export const TAGS = [
-  { id: 'want-to-call', label: 'Want to call' },
+  { id: 'want-to-call', label: 'To call' },
   { id: 'banger', label: 'Banger' },
   { id: 'hard', label: 'Hard' },
   { id: 'trash', label: 'Trash' },

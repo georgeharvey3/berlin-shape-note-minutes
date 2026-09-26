@@ -20,7 +20,7 @@ list selects the years. Every year counts by default. A second filter selects
 the songs that leaders called, the songs that nobody called, or all songs in the
 book.
 
-A reader can tag a song: open it and pick "Want to call", "Banger", "Hard" or
+A reader can tag a song: open it and pick "To call", "Banger", "Hard" or
 "Trash". The set "Tagged" lists the tagged songs, with a filter for each tag.
 The tags live in the browser's local storage, so they stay on one device and
 never reach the sheet.
