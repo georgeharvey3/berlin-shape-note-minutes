@@ -554,12 +554,9 @@ function SongRow({
         <span className="song-page">{song.page}</span>
         <span className="title">
           <span className="title-text">{song.title}</span>
-          {showEdition && song.movedFrom && <span className="tag">was {song.movedFrom}</span>}
-          {showEdition && song.status === 'added' && <span className="tag">new in {newer}</span>}
-          {showEdition && song.status === 'removed' && <span className="tag">out in {newer}</span>}
-          {song.status === 'off-book' && <span className="tag">{offBookLabel}</span>}
-          {/* A narrow page shows the first tag and a count of the rest, so the
-              row stays on one line. */}
+          {/* The reader's own tags come first: when the line runs short, the
+              tags of the book give way. A narrow page shows the first tag and
+              a count of the rest, so the row stays on one line. */}
           {TAGS.filter((tag) => tags.includes(tag.id)).map((tag, index) => (
             <span key={tag.id} className={index === 0 ? 'tag mine' : 'tag mine extra'}>
               {tag.label}
@@ -570,6 +567,20 @@ function SongRow({
               +{tags.length - 1}
             </span>
           )}
+          {/* The row leaves out the year: there are only two editions, and the
+              title column is narrow even on a wide page. */}
+          {showEdition && song.movedFrom && <span className="tag">was {song.movedFrom}</span>}
+          {showEdition && song.status === 'added' && (
+            <span className="tag" title={`New in ${newer}`}>
+              new
+            </span>
+          )}
+          {showEdition && song.status === 'removed' && (
+            <span className="tag" title={`Out in ${newer}`}>
+              out
+            </span>
+          )}
+          {song.status === 'off-book' && <span className="tag">{offBookLabel}</span>}
         </span>
         <span className="track">{never ? null : <span className="bar" style={{ width }} />}</span>
         <span className={never ? 'count zero' : 'count'}>{song.count}</span>
