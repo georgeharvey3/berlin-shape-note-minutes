@@ -366,8 +366,10 @@ body {
   color: var(--color-ink);
 }
 
-/* The title takes the ellipsis, so a tag beside it stays whole. */
+/* The title takes the ellipsis, so a tag beside it stays whole. It gives way
+   first, down to its minimum, before a tag of the book does. */
 .title-text {
+  flex-shrink: 100;
   min-width: 5em;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -389,6 +391,28 @@ body {
   background: none;
   border: var(--rule-hair) solid var(--color-rule-2);
   border-radius: var(--radius-sm);
+}
+
+/* A tag of the book gives way first when the title line runs short: it
+   takes an ellipsis, so the reader's own tag beside it stays whole. */
+.tag:not(.mine) {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Beside the reader's own tags, a tag of the book takes their tighter
+   spacing, so both fit on the title line. */
+.tag.mine ~ .tag:not(.mine) {
+  margin-inline-start: var(--space-2xs);
+  padding-inline: var(--space-3xs);
+}
+
+/* The title line has no room for a tag of the book beside two of the
+   reader's tags, even on a wide page. The edition filter still tells it. */
+.tag.mine.extra ~ .tag:not(.mine) {
+  display: none;
 }
 
 /* A tag the reader put on the song, told apart from the tags of the book.
