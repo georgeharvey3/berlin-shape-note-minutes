@@ -339,3 +339,58 @@ export function parseHandover(text, books, lookups) {
   bookId ??= calls[calls.length - 1].bookId
   return { id: newId(), event, date, bookId, status: 'recording', calls }
 }
+
+// ---------- the post ----------
+
+/**
+ * The minutes as a post for the Facebook page of the singers:
+ *
+ *   Minutes for the Thursday Singing, 10.09.26 at Refugio. We sang 39 songs: 20 from the Shenandoah Harmony and 19 from the Sacred Harp.
+ *   Shenandoah Harmony
+ *   Caro Stamm-Reusch 12b Stroudwater
+ *   Petra Ertl 235 Baltimore for Molly Adrienne
+ *   Caitlin Jay 53 Lisbon - Farewell, dear brethren of the Lord
+ *
+ * The date goes before the place, so an event "Thursday Singing at Refugio"
+ * splits at its last " at ". The books come in the order of the singing.
+ */
+export function formatPost(draft, books, lookups) {
+  const label = (bookId) => books.find((book) => book.id === bookId)?.label ?? bookId
+  const [year, month, day] = draft.date.split('-')
+  const date = `${day}.${month}.${year.slice(2)}`
+  const at = draft.event.lastIndexOf(' at ')
+  const heading =
+    at > 0
+      ? `Minutes for the ${draft.event.slice(0, at)}, ${date}${draft.event.slice(at)}.`
+      : `Minutes for the ${draft.event}, ${date}.`
+
+  const groups = []
+  for (const call of draft.calls) {
+    const last = groups[groups.length - 1]
+    if (last && last.bookId === call.bookId) last.calls.push(call)
+    else groups.push({ bookId: call.bookId, calls: [call] })
+  }
+
+  const totals = new Map()
+  for (const call of draft.calls) totals.set(call.bookId, (totals.get(call.bookId) ?? 0) + 1)
+  const songs = (count) => `${count} ${count === 1 ? 'song' : 'songs'}`
+  const parts = [...totals].map(([bookId, count]) => `${count} from the ${label(bookId)}`)
+  let summary
+  if (totals.size === 0) summary = 'We sang no songs.'
+  else if (totals.size === 1) summary = `We sang ${songs(draft.calls.length)} from the ${label([...totals.keys()][0])}.`
+  else summary = `We sang ${songs(draft.calls.length)}: ${parts.slice(0, -1).join(', ')} and ${parts[parts.length - 1]}.`
+
+  const lines = [`${heading} ${summary}`]
+  for (const group of groups) {
+    lines.push(label(group.bookId))
+    for (const call of group.calls) {
+      const song = lookups[call.bookId]?.byPage.get(call.page.toLowerCase())
+      let line = `${leaderLabel(call.leaders)} ${song ? `${song.page} ${song.title}` : call.page}`
+      const note = (call.notes ?? '').trim()
+      // "for Tobias" reads on from the title. Any other note stands apart.
+      if (note) line += /^for\b/i.test(note) ? ` ${note}` : ` - ${note}`
+      lines.push(line)
+    }
+  }
+  return lines.join('\n')
+}

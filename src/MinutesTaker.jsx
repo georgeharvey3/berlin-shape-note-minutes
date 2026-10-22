@@ -5,6 +5,7 @@ import { cleanAllRows } from './lib/minutes.js'
 import {
   currentSongs,
   formatHandover,
+  formatPost,
   germanDate,
   lastEvent,
   leaderHistory,
@@ -275,6 +276,7 @@ function Recorder({ draft, setDraft, lookups, history, onSent }) {
 
       <SendPanel draft={draft} setDraft={setDraft} onSent={onSent} />
       <Handover draft={draft} setDraft={setDraft} lookups={lookups} />
+      <FacebookPost draft={draft} lookups={lookups} />
     </>
   )
 }
@@ -731,6 +733,61 @@ function Handover({ draft, setDraft, lookups }) {
   )
 }
 
+// The minutes for the Facebook page of the singers. After the send it stands
+// open; before the send it is there in case the send fails.
+function FacebookPost({ draft, lookups, open = false }) {
+  const [status, setStatus] = useState('')
+  const text = formatPost(draft, BOOKS, lookups)
+  const canShare = typeof navigator.share === 'function'
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(text)
+      setStatus('Copied.')
+    } catch {
+      setStatus('Copy the text by hand.')
+    }
+  }
+
+  function save() {
+    const url = URL.createObjectURL(new Blob([text], { type: 'text/plain;charset=utf-8' }))
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `minutes-${draft.date}-${draft.event.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}.txt`
+    link.click()
+    setTimeout(() => URL.revokeObjectURL(url), 1000)
+  }
+
+  async function share() {
+    try {
+      await navigator.share({ text })
+    } catch {
+      // The minutes taker closed the share sheet.
+    }
+  }
+
+  return (
+    <details className="minutes-details" open={open}>
+      <summary>Facebook post</summary>
+      <textarea readOnly value={text} rows={Math.min(12, text.split('\n').length + 1)} />
+      <div className="form-actions">
+        <button type="button" className="action" onClick={copy}>
+          Copy
+        </button>
+        <button type="button" className="action" onClick={save}>
+          Save as file
+        </button>
+        {canShare && (
+          <button type="button" className="action" onClick={share}>
+            Share
+          </button>
+        )}
+      </div>
+      {status && <p className="detail-summary muted">{status}</p>}
+    </details>
+  )
+}
+
 function ImportDraft({ draft, setDraft, lookups }) {
   const [text, setText] = useState('')
   const [error, setError] = useState('')
@@ -783,6 +840,7 @@ function SentSummary({ draft, setDraft, lookups }) {
         {countLine(draft.written ?? {})}. Fix any mistake in the sheet now.{' '}
         {sheetUrl && <a href={sheetUrl}>Open the sheet</a>}
       </p>
+      <FacebookPost draft={draft} lookups={lookups} open />
       <CallList calls={draft.calls} lookups={lookups} readOnly />
       <button type="button" className="action primary wide" onClick={() => setDraft(null)}>
         New singing

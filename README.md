@@ -111,6 +111,11 @@ like minutes, so a person can read it in a message. The field "Import a draft"
 reads it back. The import takes the page of each call and gets the title again
 from the book.
 
+The box "Facebook post" gives the minutes as a post for the Facebook page of
+the singers. The box opens after the send. It is also available before the
+send, in case the send fails. The minutes taker can copy the text, save it as
+a file, or share it on a phone.
+
 ### How the send works
 
 The browser cannot write to a Google Sheet without a Google sign-in. A
