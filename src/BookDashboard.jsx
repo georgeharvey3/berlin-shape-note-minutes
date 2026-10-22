@@ -499,7 +499,8 @@ export default function BookDashboard({ definition, live }) {
             disabled={status === 'loading'}
           >
             {status === 'loading' ? 'Reading the sheets…' : 'Read the sheets again'}
-          </button>
+          </button>{' '}
+          · <a href="#minutes">Take minutes</a>
         </p>
         {failures.length > 0 && (
           <p className="warning" role="status">

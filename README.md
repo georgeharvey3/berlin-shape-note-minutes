@@ -86,6 +86,76 @@ in `src/lib/sheets.js` turns the rows back into objects.
 `src/App.jsx` reads the snapshot files with `import.meta.glob`, so a new book
 needs no new import. Add the book to `src/lib/sheets.js` and run `npm run sync`.
 
+## How the minutes taker records a singing
+
+The minutes taker records the calls of a singing in the app, at `#minutes`.
+The footer of the dashboard links to this page. The app keeps the draft minutes
+in the local storage of one device. At the end of the singing, the minutes
+taker sends the draft to the sheets in one step.
+
+The draft holds one list of calls for the whole singing, in the order that the
+singers sang them. Each call carries its book. The singers use one book before
+the break and the other book after it, so the button "Switch to …" changes the
+book for the next calls.
+
+A call keeps the page and not the title. The app shows the title from the
+current edition of the book. A page that the book does not have is legal. The
+send writes that page to the sheet, and the dashboard skips the row.
+
+The leader buttons show the leaders of this singing and the leaders of the last
+eight weeks, in alphabetical order. The text field suggests the names that the
+minutes already hold, so the spelling of a name stays the same.
+
+A handover moves a draft to another device as readable text. The text looks
+like minutes, so a person can read it in a message. The field "Import a draft"
+reads it back. The import takes the page of each call and gets the title again
+from the book.
+
+The box "Facebook post" gives the minutes as a post for the Facebook page of
+the singers. The box opens after the send. It is also available before the
+send, in case the send fails. The minutes taker can copy the text, save it as
+a file, or share it on a phone.
+
+### How the send works
+
+The browser cannot write to a Google Sheet without a Google sign-in. A
+standalone Apps Script, `apps-script/Code.gs`, writes the rows for the app. It
+runs as the account that deployed it, and it opens both spreadsheets by ID.
+
+The year sheets are pre-filled. Each row already has its `Order of entry` and
+the formula of its `Song Title`. The script therefore fills the first rows after
+the last call. It writes the event, the date, the leader, the page and the
+notes. If the pre-filled rows run out, the script copies the last row down.
+
+The script stops the send in these conditions:
+
+- The password is wrong.
+- The spreadsheet has no sheet `Minutes <year>` for the year of the singing.
+  The sheet owner must make that sheet. The dashboard also needs the new sheet
+  in `src/lib/sheets.js`.
+- The sheet already has calls with the same date and event. The app then asks
+  the minutes taker to send anyway or to keep the draft.
+
+The password gives protection only against casual changes. The two
+spreadsheets already let anyone with the link edit them.
+
+### Deploy the script
+
+1. Open [script.google.com](https://script.google.com) and make a new project.
+2. Replace the contents of `Code.gs` with the contents of `apps-script/Code.gs`.
+3. Open **Project Settings**. Under **Script Properties**, add the property
+   `PASSWORD` with the password for the minutes takers.
+4. Click **Deploy**, then **New deployment**, and select the type **Web app**.
+5. Set **Execute as** to **Me** and **Who has access** to **Anyone**.
+6. Click **Deploy** and give the script access to your spreadsheets.
+7. Copy the URL of the web app. The URL ends in `/exec`.
+8. Put the URL in `SCRIPT_URL` in `src/lib/sendMinutes.js`, then build and
+   deploy the app.
+
+If you change `Code.gs` later, deploy it again with **Manage deployments**.
+Edit the current deployment and select a new version, so the URL stays the
+same.
+
 ## The two editions of the Sacred Harp
 
 The singers changed the edition in September 2025. The first singing with the
