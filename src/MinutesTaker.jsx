@@ -166,6 +166,8 @@ function Recorder({ draft, setDraft, lookups, history, onSent }) {
       }
     })
     setEditing(null)
+    // Back up to the leader buttons, ready for the next call.
+    formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
   function removeCall(id) {
