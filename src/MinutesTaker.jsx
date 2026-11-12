@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { BOOKS, toObjects } from './lib/sheets.js'
-import { buildBook, readBookIndex } from './lib/books.js'
+import { buildBook, pageNumber, readBookIndex } from './lib/books.js'
 import { cleanAllRows } from './lib/minutes.js'
 import {
   currentSongs,
@@ -347,10 +347,13 @@ function CallForm({ call, bookId: initialBook, lookups, history, buttons, onSave
 
   // The page the form would save: the chosen song, or else the best match of
   // the text in the song field.
+  // A typed number only takes a song of that number, not one that just starts
+  // with it, so "2" and Enter never saves page 20.
   function pickedPage() {
     if (page !== null) return page
-    if (choices.length > 0) return choices[0].page
     const text = songText.trim()
+    const best = choices[0]
+    if (best && (!/^\d/.test(text) || pageNumber(best.page) === pageNumber(text))) return best.page
     return text === '' ? null : text
   }
 

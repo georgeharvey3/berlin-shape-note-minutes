@@ -7,7 +7,7 @@
 // shows the call, so the page is the one truth, as it is in the sheet.
 
 import { useCallback, useEffect, useState } from 'react'
-import { foldTitle } from './books.js'
+import { foldTitle, pageOrder } from './books.js'
 
 const DRAFT_KEY = 'bsnm-minutes-draft-v1'
 const LAST_EVENT_KEY = 'bsnm-minutes-last-event-v1'
@@ -128,9 +128,10 @@ export function currentSongs(book) {
  *
  * A page that the book has comes first. A bare number whose page the book cuts
  * into a top half and a bottom half gives both halves, so "178" offers "178t"
- * and "178b". Text that is not a page number also searches the titles.
+ * and "178b". Then come the pages that start with the number, so "2" offers
+ * 20, 21 and on. Text that is not a page number also searches the titles.
  */
-export function songChoices(songs, input, limit = 6) {
+export function songChoices(songs, input, limit = 8) {
   const text = input.trim()
   if (text === '') return []
   const lower = text.toLowerCase()
@@ -145,6 +146,15 @@ export function songChoices(songs, input, limit = 6) {
         choices.push(entry)
       }
     }
+  }
+
+  // A page that starts with the typed text, so "2" offers 20, 21 and on, and
+  // "23" offers 230 and on. Shorter pages come first, in the order of the book.
+  if (/^\d+[tb]?$/i.test(text)) {
+    const starts = songs.entries
+      .filter((entry) => !choices.includes(entry) && entry.page.toLowerCase().startsWith(lower))
+      .sort((a, b) => pageOrder(a.page) - pageOrder(b.page))
+    choices.push(...starts)
   }
 
   const fold = foldTitle(text)
