@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { BOOKS, toObjects } from './lib/sheets.js'
 import { buildBook, readBookIndex } from './lib/books.js'
 import { cleanAllRows } from './lib/minutes.js'
@@ -23,6 +23,9 @@ import { sendMinutes } from './lib/sendMinutes.js'
 // The most leader buttons the form shows: the leaders of this singing first,
 // then the regulars of the last eight weeks.
 const LEADER_BUTTONS = 18
+
+// The keys of the page keypad. A page is a number with an optional t or b.
+const KEYPAD = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', 't', 'b']
 
 function bookLabel(bookId) {
   return BOOKS.find((book) => book.id === bookId)?.label ?? bookId
@@ -296,13 +299,30 @@ function CallForm({ call, bookId: initialBook, lookups, history, buttons, onSave
   const [page, setPage] = useState(call?.page ?? null)
   const [notes, setNotes] = useState(call?.notes ?? '')
   const songRef = useRef(null)
+  const songFieldRef = useRef(null)
+  const actionsRef = useRef(null)
+  // The part of the form to bring into view after the next
+  // render: 'song' or 'save'. The scroll waits for the render, because the
+  // form changes its height when a song is picked.
+  const scrollTo = useRef(null)
+
+  useEffect(() => {
+    const target = scrollTo.current
+    if (target === null) return
+    scrollTo.current = null
+    const element = target === 'song' ? songFieldRef.current : actionsRef.current
+    element?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  })
 
   const songs = lookups[bookId]
   const chosen = page === null ? null : songs?.byPage.get(page.toLowerCase()) ?? null
   const choices = useMemo(() => (songs ? songChoices(songs, songText) : []), [songs, songText])
   const exactPage = songs?.byPage.has(songText.trim().toLowerCase())
   const suggestions = useMemo(
-    () => leaderSuggestions(history, leaderText).filter((name) => !leaders.includes(name)),
+    () =>
+      leaderSuggestions(history, leaderText)
+        .filter((name) => !leaders.includes(name))
+        .sort((a, b) => a.localeCompare(b)),
     [history, leaderText, leaders],
   )
   const typedIsKnown = history.ranked.some((entry) => entry.name === leaderText.trim())
@@ -312,7 +332,12 @@ function CallForm({ call, bookId: initialBook, lookups, history, buttons, onSave
       previous.includes(name) ? previous.filter((each) => each !== name) : [...previous, name],
     )
     setLeaderText('')
-    if (page === null) songRef.current?.focus()
+    if (page !== null || songText !== '') return
+    // With a new leader and no song yet, bring the song field and its keypad
+    // into view. On a phone, the focus opens the keyboard. The keypad is there
+    // to keep the keyboard closed, so only a mouse device gets the focus.
+    if (!leaders.includes(name)) scrollTo.current = 'song'
+    if (window.matchMedia('(pointer: fine)').matches) songRef.current?.focus({ preventScroll: true })
   }
 
   function addTyped() {
@@ -335,25 +360,34 @@ function CallForm({ call, bookId: initialBook, lookups, history, buttons, onSave
     onSave({ id: call?.id ?? newId(), bookId, leaders, page: finalPage, notes: notes.trim() })
   }
 
+  function pickSong(next) {
+    setPage(next)
+    setSongText('')
+    if (leaders.length > 0) scrollTo.current = 'save'
+  }
+
   function onSongKey(event) {
     if (event.key !== 'Enter') return
     event.preventDefault()
     const next = pickedPage()
     if (next === null) return
-    setPage(next)
-    setSongText('')
     if (leaders.length > 0 && !call) {
       onSave({ id: newId(), bookId, leaders, page: next, notes: notes.trim() })
+      return
     }
+    pickSong(next)
   }
 
   const canSave = leaders.length > 0 && pickedPage() !== null
+  // The step the minutes taker does next: a leader, then a song, then the save.
+  const next = leaders.length === 0 ? 'leader' : pickedPage() === null ? 'song' : 'save'
+  const step = (name) => (next === name ? 'step next' : 'step')
 
   return (
     <div className={call ? 'call-form editing' : 'call-form'}>
       <p className="field-label">{call ? 'Edit call' : `New call · ${bookLabel(bookId)}`}</p>
 
-      <div className="field">
+      <div className={`field ${step('leader')}`}>
         <span className="field-label">Leader</span>
         <div className="chips" role="group" aria-label="Leaders">
           {[...buttons, ...leaders.filter((name) => !buttons.includes(name))].map((name) => {
@@ -404,7 +438,7 @@ function CallForm({ call, bookId: initialBook, lookups, history, buttons, onSave
         )}
       </div>
 
-      <div className="field">
+      <div className={`field ${step('song')}`} ref={songFieldRef}>
         <span className="field-label">Song</span>
         {page !== null ? (
           <div className="picked-song">
@@ -425,6 +459,27 @@ function CallForm({ call, bookId: initialBook, lookups, history, buttons, onSave
               onChange={(e) => setSongText(e.target.value)}
               onKeyDown={onSongKey}
             />
+            <div className="keypad" role="group" aria-label="Page keypad">
+              {KEYPAD.map((key) => (
+                <button
+                  key={key}
+                  type="button"
+                  className="key"
+                  onClick={() => setSongText((text) => text + key)}
+                >
+                  {key}
+                </button>
+              ))}
+              <button
+                type="button"
+                className="key"
+                aria-label="Delete"
+                disabled={songText === ''}
+                onClick={() => setSongText((text) => text.slice(0, -1))}
+              >
+                ⌫
+              </button>
+            </div>
             {songText.trim() !== '' && (
               <div className="choices">
                 {choices.map((entry) => (
@@ -433,8 +488,7 @@ function CallForm({ call, bookId: initialBook, lookups, history, buttons, onSave
                     type="button"
                     className="choice"
                     onClick={() => {
-                      setPage(entry.page)
-                      setSongText('')
+                      pickSong(entry.page)
                     }}
                   >
                     <span className="song-page">{entry.page}</span> {entry.title}
@@ -445,8 +499,7 @@ function CallForm({ call, bookId: initialBook, lookups, history, buttons, onSave
                     type="button"
                     className="choice muted"
                     onClick={() => {
-                      setPage(songText.trim())
-                      setSongText('')
+                      pickSong(songText.trim())
                     }}
                   >
                     Use “{songText.trim()}”. It is not in the book.
@@ -492,7 +545,7 @@ function CallForm({ call, bookId: initialBook, lookups, history, buttons, onSave
         </label>
       )}
 
-      <div className="form-actions">
+      <div className={`form-actions ${step('save')}`} ref={actionsRef}>
         <button type="button" className="action primary" disabled={!canSave} onClick={save}>
           {call ? 'Save call' : 'Add call'}
         </button>
